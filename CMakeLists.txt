@@ -7,7 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(DOWNLOAD_DATASETS "Automatically download required datasets at build-time." OFF)
 option(CREATE_SCRIPTMODULES "Automatically create all required scriptmodule files at build-time (requires python3)." OFF)
 
-set(PYTORCH_VERSION "1.9.0")
+set(PYTORCH_VERSION "1.9.1")
 
 set(CMAKE_CXX_STANDARD 14)
 #--------------------------------------------------------------------------------------------
@@ -207,6 +207,26 @@ set_target_properties(PreactResNet_cifar10 PROPERTIES
   CXX_STANDARD 14
   CXX_STANDARD_REQUIRED YES
 )
+
+# ---------------------------------------------------------------------
+# --- RegNet torch_cifar10
+add_executable(RegNet_cifar10)
+target_sources(RegNet_cifar10 PRIVATE  RegNet/main.cpp
+    RegNet/regnet.cpp
+    RegNet/regnet.h
+    cifar10.cpp
+    cifar10.h
+    transform.h
+    transform.cpp
+)
+
+target_link_libraries(RegNet_cifar10 ${TORCH_LIBRARIES})  
+
+set_target_properties(RegNet_cifar10 PROPERTIES
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+)
+
 
 # ---------------------------------------------------------------------
 # --- ResNet torch_cifar10

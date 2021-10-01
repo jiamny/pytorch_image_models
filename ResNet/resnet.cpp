@@ -37,7 +37,7 @@ torch::Tensor BasicBlockImpl::forward(torch::Tensor x) {
   return out.relu_();
 }
 
-BottleneckImpl::BottleneckImpl(int64_t in_planes, int64_t planes, int64_t stride) {
+Bottleneck_Impl::Bottleneck_Impl(int64_t in_planes, int64_t planes, int64_t stride) {
 
 	if( this->stride != stride ) this->stride = stride;
 
@@ -60,7 +60,7 @@ BottleneckImpl::BottleneckImpl(int64_t in_planes, int64_t planes, int64_t stride
 	}
 }
 
-torch::Tensor BottleneckImpl::forward(torch::Tensor X) {
+torch::Tensor Bottleneck_Impl::forward(torch::Tensor X) {
 
   auto out = conv1->forward(X);
   out = bn1->forward(out).relu_();
@@ -148,7 +148,7 @@ ResNetBNImpl::ResNetBNImpl(std::vector<int> num_blocks, int64_t num_classes) {
 	this->linear = torch::nn::Linear(512*this->expansion, num_classes);
 }
 
-std::vector<Bottleneck> ResNetBNImpl::_make_layer(int64_t planes, int64_t blocks, int64_t stride) {
+std::vector<Bottleneck_> ResNetBNImpl::_make_layer(int64_t planes, int64_t blocks, int64_t stride) {
 	std::vector<int64_t> strides;
 	strides.push_back(stride);
 
@@ -156,10 +156,10 @@ std::vector<Bottleneck> ResNetBNImpl::_make_layer(int64_t planes, int64_t blocks
 		strides.push_back(1);
 
 
-	std::vector<Bottleneck> layers;
+	std::vector<Bottleneck_> layers;
 
 	for( int i = 0; i < strides.size(); i++ ) {
-		layers.push_back(Bottleneck(this->in_planes, planes, strides[i]));
+		layers.push_back(Bottleneck_(this->in_planes, planes, strides[i]));
 		   this->in_planes = planes*this->expansion;
 	}
 

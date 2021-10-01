@@ -27,7 +27,7 @@ struct BasicBlockImpl : torch::nn::Module {
 
 TORCH_MODULE(BasicBlock);
 
-struct BottleneckImpl : torch::nn::Module {
+struct Bottleneck_Impl : torch::nn::Module {
 
   int64_t stride{1};
   torch::nn::Conv2d conv1{nullptr}, conv2{nullptr}, conv3{nullptr};
@@ -37,12 +37,12 @@ struct BottleneckImpl : torch::nn::Module {
   torch::nn::Sequential shortcut{nullptr};
   bool useShortcut{false};
 
-  BottleneckImpl(int64_t in_planes, int64_t planes, int64_t stride=1);
+  Bottleneck_Impl(int64_t in_planes, int64_t planes, int64_t stride=1);
 
   torch::Tensor forward(torch::Tensor X);
 };
 
-TORCH_MODULE(Bottleneck);
+TORCH_MODULE(Bottleneck_);
 
 
 struct ResNetBBImpl : torch::nn::Module {
@@ -70,11 +70,11 @@ struct ResNetBNImpl : torch::nn::Module {
   int64_t in_planes{64};
   torch::nn::Conv2d conv1{nullptr};
   torch::nn::BatchNorm2d bn1{nullptr};
-  std::vector<Bottleneck> layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
+  std::vector<Bottleneck_> layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
   torch::nn::Linear linear{nullptr};
   int64_t expansion{1};
 
-  std::vector<Bottleneck> _make_layer(
+  std::vector<Bottleneck_> _make_layer(
           int64_t planes,
           int64_t blocks,
           int64_t stride);

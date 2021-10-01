@@ -43,6 +43,8 @@ int main() {
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
 
+	bool saveBestModel{false};
+
 	const std::string CIFAR_data_path = "./data/cifar/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
@@ -172,15 +174,17 @@ int main() {
 
 	    std::cout << "Testset - Loss: " << test_sample_mean_loss << ", Accuracy: " << test_accuracy << '\n';
 
-
-	    if( test_accuracy > best_acc ) {
-	       torch::save(model, PATH);
-	       best_acc = test_accuracy;
-	    }
+	    if( saveBestModel )
+	    	if( test_accuracy > best_acc ) {
+	    		torch::save(model, PATH);
+	    		best_acc = test_accuracy;
+	    	}
 	}
 
-	model = EfficientNetB0(10);
-    torch::load(model, PATH);
+	if( saveBestModel ) {
+		model = EfficientNetB0(10);
+		torch::load(model, PATH);
+	}
 
     float class_correct[10];
     float class_total[10];
