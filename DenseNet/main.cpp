@@ -6,12 +6,6 @@
 #include <iomanip>
 #include "densenet.h"
 #include "../cifar10.h"
-#include "../transform.h"
-
-using transform::ConstantPad;
-using transform::RandomCrop;
-using transform::RandomHorizontalFlip;
-
 
 int main() {
 
@@ -53,9 +47,9 @@ int main() {
 
 	// CIFAR10 custom dataset
 	auto train_dataset = CIFAR10(CIFAR_data_path)
-	        .map(ConstantPad(4))
-	        .map(RandomHorizontalFlip())
-	        .map(RandomCrop({image_size, image_size}))
+//	        .map(ConstantPad(4))
+//	        .map(RandomHorizontalFlip())
+//	        .map(RandomCrop({image_size, image_size}))
 			.map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 
@@ -64,9 +58,9 @@ int main() {
 	std::cout << "num_train_samples: " << num_train_samples << std::endl;
 
 	auto test_dataset = CIFAR10(CIFAR_data_path, CIFAR10::Mode::kTest)
-    	    .map(ConstantPad(4))
-    		.map(RandomHorizontalFlip())
-    		.map(RandomCrop({image_size, image_size}))
+//    	    .map(ConstantPad(4))
+//    		.map(RandomHorizontalFlip())
+//    		.map(RandomCrop({image_size, image_size}))
 		    .map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 

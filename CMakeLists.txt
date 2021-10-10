@@ -46,8 +46,6 @@ target_sources(AlexNet_cifar10 PRIVATE  AlexNet/main.cpp
     AlexNet/modelsimpl.h
     cifar10.cpp
     cifar10.h
-    transform.cpp
-    transform.h
 )
 target_link_libraries(AlexNet_cifar10 ${TORCH_LIBRARIES})
 
@@ -64,8 +62,6 @@ target_sources(DenseNet_cifar10 PRIVATE  DenseNet/main.cpp
     DenseNet/densenet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(DenseNet_cifar10 ${TORCH_LIBRARIES})  
@@ -83,8 +79,6 @@ target_sources(DPN_cifar10 PRIVATE  DPN/main.cpp
     DPN/dpn.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(DPN_cifar10 ${TORCH_LIBRARIES})  
@@ -102,8 +96,6 @@ target_sources(EfficientNet_cifar10 PRIVATE  EfficientNet/main.cpp
     EfficientNet/efficientnet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(EfficientNet_cifar10 ${TORCH_LIBRARIES})  
@@ -121,8 +113,6 @@ target_sources(GoogleNet_cifar10 PRIVATE  GoogleNet/main.cpp
     GoogleNet/googlenet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(GoogleNet_cifar10 ${TORCH_LIBRARIES})  
@@ -140,8 +130,6 @@ target_sources(LeNet_cifar10 PRIVATE  LeNet/main.cpp
     LeNet/nnet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(LeNet_cifar10 ${TORCH_LIBRARIES})  
@@ -159,8 +147,6 @@ target_sources(MobileNet_cifar10 PRIVATE  MobileNet/main.cpp
     MobileNet/mobilenetv1.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(MobileNet_cifar10 ${TORCH_LIBRARIES})  
@@ -178,8 +164,6 @@ target_sources(PnasNet_cifar10 PRIVATE  PnasNet/main.cpp
     PnasNet/pnasnet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(PnasNet_cifar10 ${TORCH_LIBRARIES})  
@@ -197,8 +181,6 @@ target_sources(PreactResNet_cifar10 PRIVATE  PreactResNet/main.cpp
     PreactResNet/PreactResNet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(PreactResNet_cifar10 ${TORCH_LIBRARIES})  
@@ -216,8 +198,6 @@ target_sources(RegNet_cifar10 PRIVATE  RegNet/main.cpp
     RegNet/regnet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(RegNet_cifar10 ${TORCH_LIBRARIES})  
@@ -236,8 +216,6 @@ target_sources(ResNet_cifar10 PRIVATE  ResNet/main.cpp
     ResNet/resnet.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(ResNet_cifar10 ${TORCH_LIBRARIES})  
@@ -256,8 +234,6 @@ target_sources(VGG_cifar10 PRIVATE  VGG/main.cpp
     VGG/modelsimpl.h
     cifar10.cpp
     cifar10.h
-    transform.h
-    transform.cpp
 )
 
 target_link_libraries(VGG_cifar10 ${TORCH_LIBRARIES})  

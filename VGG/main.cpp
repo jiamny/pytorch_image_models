@@ -6,12 +6,6 @@
 #include <iomanip>
 #include "vgg.h"
 #include "../cifar10.h"
-#include "../transform.h"
-
-using transform::ConstantPad;
-using transform::RandomCrop;
-using transform::RandomHorizontalFlip;
-
 
 int main() {
 
@@ -38,7 +32,7 @@ int main() {
 	const int64_t image_size{32};
 	const int64_t num_classes = 10;
 	const int64_t batch_size = 100;
-	const size_t num_epochs = 3;
+	const size_t num_epochs = 5;
 	const double learning_rate = 0.001;
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
@@ -51,9 +45,6 @@ int main() {
 
 	// CIFAR10 custom dataset
 	auto train_dataset = CIFAR10(CIFAR_data_path)
-	        .map(ConstantPad(4))
-	        .map(RandomHorizontalFlip())
-	        .map(RandomCrop({image_size, image_size}))
 			.map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 
@@ -62,9 +53,6 @@ int main() {
 	std::cout << "num_train_samples: " << num_train_samples << std::endl;
 
 	auto test_dataset = CIFAR10(CIFAR_data_path, CIFAR10::Mode::kTest)
-    	    .map(ConstantPad(4))
-    		.map(RandomHorizontalFlip())
-    		.map(RandomCrop({image_size, image_size}))
 		    .map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 

@@ -80,7 +80,7 @@ RegNetImpl::RegNetImpl(std::map<std::string, std::vector<int64_t>> cfg, std::map
 	this->cfg2 = cfg2;
 	this->in_planes = 64;
 	std::vector<int64_t> width = cfg.at("widths");
-	std::cout << width.size() << std::endl;
+	//std::cout << width.size() << std::endl;
 
 	this->conv1 = torch::nn::Conv2d(Options(3, 64, 3).stride(1).padding(1).bias(false));
 	this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(64));
