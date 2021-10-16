@@ -8,7 +8,7 @@ torch::Tensor swish(torch::Tensor x);
 
 torch::Tensor drop_connect(torch::Tensor x, double drop_ratio);
 
-struct SEImpl : torch::nn::Module {
+struct SEImpl : public torch::nn::Module {
 	//Squeeze-and-Excitation block with Swish.
 	torch::nn::Conv2d se1{nullptr}, se2{nullptr};
 	explicit SEImpl(int64_t in_planes, int64_t se_planes);
@@ -19,7 +19,7 @@ struct SEImpl : torch::nn::Module {
 TORCH_MODULE(SE);
 
 //'''expansion + depthwise + pointwise + squeeze-excitation'''
-struct Block_Impl : torch::nn::Module {
+struct Block_Impl : public torch::nn::Module {
 	torch::nn::Conv2d conv1{nullptr}, conv2{nullptr}, conv3{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr}, bn2{nullptr}, bn3{nullptr};
 	SE se{nullptr};
@@ -44,7 +44,7 @@ struct Block_Impl : torch::nn::Module {
 
 TORCH_MODULE(Block_);
 
-struct EfficientNetImpl : torch::nn::Module {
+struct EfficientNetImpl : public torch::nn::Module {
 	std::map<std::string, std::vector<int64_t>> cfg;
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};

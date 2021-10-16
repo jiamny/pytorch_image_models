@@ -2,7 +2,7 @@
 
 #include <torch/torch.h>
 
-struct MobileBlockImpl : torch::nn::Module {
+struct MobileBlockImpl : public torch::nn::Module {
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::Conv2d conv2{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
@@ -16,7 +16,7 @@ struct MobileBlockImpl : torch::nn::Module {
 
 TORCH_MODULE(MobileBlock);
 
-struct MobileNetV1Impl : torch::nn::Module {
+struct MobileNetV1Impl : public torch::nn::Module {
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
 	torch::nn::Sequential linear;

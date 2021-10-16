@@ -8,7 +8,7 @@
 
 #include <torch/torch.h>
 
-struct BasicBlockImpl : torch::nn::Module {
+struct BasicBlockImpl : public torch::nn::Module {
 
   int64_t stride{1};
   torch::nn::Sequential downsample;
@@ -27,7 +27,7 @@ struct BasicBlockImpl : torch::nn::Module {
 
 TORCH_MODULE(BasicBlock);
 
-struct Bottleneck_Impl : torch::nn::Module {
+struct Bottleneck_Impl : public torch::nn::Module {
 
   int64_t stride{1};
   torch::nn::Conv2d conv1{nullptr}, conv2{nullptr}, conv3{nullptr};
@@ -45,7 +45,7 @@ struct Bottleneck_Impl : torch::nn::Module {
 TORCH_MODULE(Bottleneck_);
 
 
-struct ResNetBBImpl : torch::nn::Module {
+struct ResNetBBImpl : public torch::nn::Module {
   int64_t in_planes{64};
   torch::nn::Conv2d conv1{nullptr};
   torch::nn::BatchNorm2d bn1{nullptr};
@@ -66,7 +66,7 @@ struct ResNetBBImpl : torch::nn::Module {
 TORCH_MODULE(ResNetBB);
 
 
-struct ResNetBNImpl : torch::nn::Module {
+struct ResNetBNImpl : public torch::nn::Module {
   int64_t in_planes{64};
   torch::nn::Conv2d conv1{nullptr};
   torch::nn::BatchNorm2d bn1{nullptr};

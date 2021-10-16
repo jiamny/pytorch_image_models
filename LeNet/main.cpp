@@ -18,7 +18,7 @@ int main() {
 	// Hyper parameters
 	const int64_t num_classes = 10;
 	const int64_t batch_size = 100;
-	const size_t num_epochs = 2;
+	const size_t num_epochs = 10;
 	const double learning_rate = 0.001;
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;

@@ -4,7 +4,7 @@
 #include <torch/torch.h>
 #include <cmath>
 
-struct InceptionImpl : torch::nn::Module {
+struct InceptionImpl : public torch::nn::Module {
 
 	torch::nn::Sequential b1, b2, b3, b4;
 
@@ -16,7 +16,7 @@ struct InceptionImpl : torch::nn::Module {
 TORCH_MODULE(Inception);
 
 
-struct GoogleNetImpl : torch::nn::Module {
+struct GoogleNetImpl : public torch::nn::Module {
 
 	torch::nn::Sequential pre_layers;
 	Inception a3{nullptr}, b3{nullptr}, a4{nullptr}, b4{nullptr}, c4{nullptr}, d4{nullptr}, e4{nullptr}, a5{nullptr}, b5{nullptr};

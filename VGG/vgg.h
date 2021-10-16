@@ -2,7 +2,7 @@
 
 #include <torch/torch.h>
 
-struct VGGImpl : torch::nn::Module {
+struct VGGImpl : public torch::nn::Module {
   torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
   void _initialize_weights();
@@ -16,56 +16,56 @@ struct VGGImpl : torch::nn::Module {
 };
 
 // VGG 11-layer model (configuration "A")
-struct VGG11Impl : VGGImpl {
+struct VGG11Impl : public VGGImpl {
   explicit VGG11Impl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 };
 
 // VGG 13-layer model (configuration "B")
-struct VGG13Impl : VGGImpl {
+struct VGG13Impl : public VGGImpl {
   explicit VGG13Impl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 };
 
 // VGG 16-layer model (configuration "D")
-struct VGG16Impl : VGGImpl {
+struct VGG16Impl : public VGGImpl {
   explicit VGG16Impl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 };
 
 // VGG 19-layer model (configuration "E")
-struct VGG19Impl : VGGImpl {
+struct VGG19Impl : public VGGImpl {
   explicit VGG19Impl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 };
 
 // VGG 11-layer model (configuration "A") with batch normalization
-struct VGG11BNImpl : VGGImpl {
+struct VGG11BNImpl : public VGGImpl {
   explicit VGG11BNImpl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 };
 
 // VGG 13-layer model (configuration "B") with batch normalization
-struct VGG13BNImpl : VGGImpl {
+struct VGG13BNImpl : public VGGImpl {
   explicit VGG13BNImpl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 };
 
 // VGG 16-layer model (configuration "D") with batch normalization
-struct VGG16BNImpl : VGGImpl {
+struct VGG16BNImpl : public VGGImpl {
   explicit VGG16BNImpl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 };
 
 // VGG 19-layer model (configuration 'E') with batch normalization
-struct VGG19BNImpl : VGGImpl {
+struct VGG19BNImpl : public VGGImpl {
   explicit VGG19BNImpl(
       int64_t num_classes = 1000,
       bool initialize_weights = true);

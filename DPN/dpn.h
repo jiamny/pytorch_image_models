@@ -3,7 +3,7 @@
 #include <torch/torch.h>
 #include <map>
 
-struct BottleneckImpl : torch::nn::Module {
+struct BottleneckImpl : public torch::nn::Module {
 	int64_t out_planes;
 	int64_t dense_depth;
 	bool first_layer{false};
@@ -19,7 +19,7 @@ struct BottleneckImpl : torch::nn::Module {
 
 TORCH_MODULE(Bottleneck);
 
-struct DPNImpl : torch::nn::Module {
+struct DPNImpl : public torch::nn::Module {
 	std::vector<int64_t> in_planes, out_planes, num_blocks, dense_depth;
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};

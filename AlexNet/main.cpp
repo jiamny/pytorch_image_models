@@ -17,16 +17,16 @@ int main() {
 	torch::Device device(cuda_available ? torch::kCUDA : torch::kCPU);
 	std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
 
-	AlexNet net( 10 );
-	net->to(device);
-	auto dict = net->named_parameters();
+	auto net = AlexNetImpl( 10 );
+	net.to(device);
+	auto dict = net.named_parameters();
 	for (auto n = dict.begin(); n != dict.end(); n++) {
 		std::cout<<(*n).key()<<std::endl;
 	}
 
 	std::cout << "Test model ..." << std::endl;
 	torch::Tensor x = torch::randn({1,3,32,32});
-	torch::Tensor y = net(x);
+	torch::Tensor y = net.forward(x);
 	std::cout << y << std::endl;
 
 	// Hyper parameters
@@ -46,9 +46,6 @@ int main() {
 
 	// CIFAR10 custom dataset
 	auto train_dataset = CIFAR10(CIFAR_data_path)
-//	        .map(ConstantPad(4))
-//	        .map(RandomHorizontalFlip())
-//	        .map(RandomCrop({image_size, image_size}))
 			.map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 
@@ -57,9 +54,6 @@ int main() {
 	std::cout << "num_train_samples: " << num_train_samples << std::endl;
 
 	auto test_dataset = CIFAR10(CIFAR_data_path, CIFAR10::Mode::kTest)
-//    	    .map(ConstantPad(4))
-//    		.map(RandomHorizontalFlip())
-//    		.map(RandomCrop({image_size, image_size}))
 		    .map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 

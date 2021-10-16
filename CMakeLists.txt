@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-project(torch_cifar10 VERSION 1.0.0 LANGUAGES CXX)
+project(pytorch_image_models VERSION 1.0.0 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -221,6 +221,23 @@ target_sources(ResNet_cifar10 PRIVATE  ResNet/main.cpp
 target_link_libraries(ResNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(ResNet_cifar10 PROPERTIES
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+)
+
+# ---------------------------------------------------------------------
+# --- ResNext torch_cifar10
+add_executable(ResNext_cifar10)
+target_sources(ResNext_cifar10 PRIVATE  ResNext/main.cpp
+    ResNext/resnext.cpp
+    ResNext/resnext.h
+    cifar10.cpp
+    cifar10.h
+)
+
+target_link_libraries(ResNext_cifar10 ${TORCH_LIBRARIES})  
+
+set_target_properties(ResNext_cifar10 PROPERTIES
   CXX_STANDARD 14
   CXX_STANDARD_REQUIRED YES
 )

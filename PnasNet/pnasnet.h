@@ -6,7 +6,7 @@
 
 // Progressive Neural Architecture Search
 
-struct SepConvImpl : torch::nn::Module {
+struct SepConvImpl : public torch::nn::Module {
     //Separable Convolution.'''
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
@@ -18,7 +18,7 @@ struct SepConvImpl : torch::nn::Module {
 
 TORCH_MODULE(SepConv);
 
-struct CellAImpl : torch::nn::Module {
+struct CellAImpl : public torch::nn::Module {
 	int64_t stride{1};
 	SepConv sep_conv1{nullptr};
 	torch::nn::Conv2d conv1{nullptr};
@@ -31,7 +31,7 @@ struct CellAImpl : torch::nn::Module {
 
 TORCH_MODULE(CellA);
 
-struct CellBImpl : torch::nn::Module {
+struct CellBImpl : public torch::nn::Module {
 	int64_t stride{1};
 	SepConv sep_conv1{nullptr};
 	SepConv sep_conv2{nullptr};
@@ -47,7 +47,7 @@ struct CellBImpl : torch::nn::Module {
 TORCH_MODULE(CellB);
 
 
-struct PNASNetAImpl : torch::nn::Module {
+struct PNASNetAImpl : public torch::nn::Module {
 
 	int64_t in_planes;
 	std::string cell_type;
@@ -70,7 +70,7 @@ struct PNASNetAImpl : torch::nn::Module {
 TORCH_MODULE(PNASNetA);
 
 
-struct PNASNetBImpl : torch::nn::Module {
+struct PNASNetBImpl : public torch::nn::Module {
 
 	int64_t in_planes;
 	std::string cell_type;
