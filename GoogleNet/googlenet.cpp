@@ -70,7 +70,7 @@ GoogleNetImpl::GoogleNetImpl(int64_t num_classes) {
 	this->b4 = Inception(512, 160, 112, 224, 24,  64,  64);
 	this->c4 = Inception(512, 128, 128, 256, 24,  64,  64);
 	this->d4 = Inception(512, 112, 144, 288, 32,  64,  64);
-	        this->e4 = Inception(528, 256, 160, 320, 32, 128, 128);
+	this->e4 = Inception(528, 256, 160, 320, 32, 128, 128);
 
 	this->a5 = Inception(832, 256, 160, 320, 32, 128, 128);
 	this->b5 = Inception(832, 384, 192, 384, 48, 128, 128);

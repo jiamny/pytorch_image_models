@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 project(pytorch_image_models VERSION 1.0.0 LANGUAGES CXX)
 
@@ -7,9 +7,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(DOWNLOAD_DATASETS "Automatically download required datasets at build-time." OFF)
 option(CREATE_SCRIPTMODULES "Automatically create all required scriptmodule files at build-time (requires python3)." OFF)
 
-set(PYTORCH_VERSION "1.9.1")
+set(PYTORCH_VERSION "1.10.1")
 
 set(CMAKE_CXX_STANDARD 14)
+
 #--------------------------------------------------------------------------------------------
 # following line solve the issue of Can't link a project using cmake with OpenCV and LibTorch
 # -------------------------------------------------------------------------------------------
@@ -32,11 +33,6 @@ set(CMAKE_CXX_STANDARD 17) # To use C++ <filesystem>
 
 # use openmp
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-
-
-set(requiredlibs ${OpenCV_LIBS})
-list(APPEND requiredlibs ${TORCH_LIBRARIES})
-#list(APPEND requiredlibs "png16")
 
 # --- AlexNet torch_cifar10
 add_executable(AlexNet_cifar10)

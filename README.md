@@ -3,8 +3,9 @@
 Train torch image models on the CIFAR10 dataset.
 
 ## Prerequisites
-- cmake 3.14+
-- PyTorch 1.9.1
+- cmake 3.22+
+- PyTorch 1.10.1
+- opencv 4.5.3
 
 ## Links
 [pytorch-cpp](https://img.shields.io/travis/prabhuomkar/pytorch-cpp)

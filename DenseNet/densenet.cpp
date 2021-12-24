@@ -4,7 +4,7 @@
 using Options = torch::nn::Conv2dOptions;
 
 
-BottleneckImpl::BottleneckImpl(int64_t in_planes, int64_t growth_rate) {
+RdBottleneckImpl::RdBottleneckImpl(int64_t in_planes, int64_t growth_rate) {
 	 this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(in_planes));
 	 this->conv1 = torch::nn::Conv2d(Options(in_planes, 4*growth_rate, 1).bias(false));
 	 this->bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(4*growth_rate));
@@ -12,7 +12,7 @@ BottleneckImpl::BottleneckImpl(int64_t in_planes, int64_t growth_rate) {
 }
 
 
-torch::Tensor BottleneckImpl::forward(torch::Tensor x) {
+torch::Tensor RdBottleneckImpl::forward(torch::Tensor x) {
 
 	auto out = conv1->forward(torch::relu(bn1->forward(x)));
 	out = conv2->forward(torch::relu(bn2->forward(out)));
@@ -100,11 +100,11 @@ torch::Tensor DenseNetImpl::forward(torch::Tensor x) {
      return out;
 }
 
-std::vector<Bottleneck> DenseNetImpl::_make_dense_layers(int64_t in_planes, int64_t nblock) {
-	std::vector<Bottleneck> layers;
+std::vector<RdBottleneck> DenseNetImpl::_make_dense_layers(int64_t in_planes, int64_t nblock) {
+	std::vector<RdBottleneck> layers;
 
 	for(int i = 0; i < nblock; i++ ) {
-	    layers.push_back(Bottleneck(in_planes, this->growth_rate));
+	    layers.push_back(RdBottleneck(in_planes, this->growth_rate));
 	    in_planes += this->growth_rate;
 	}
 	return layers;
