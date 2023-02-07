@@ -4,27 +4,35 @@
 #include <torch/torch.h>
 #include <cmath>
 
+using Options = torch::nn::Conv2dOptions;
+
 // Progressive Neural Architecture Search
 
-struct SepConvImpl : public torch::nn::Module {
+struct SepConvImpl : torch::nn::SequentialImpl {
     //Separable Convolution.'''
-	torch::nn::Conv2d conv1{nullptr};
-	torch::nn::BatchNorm2d bn1{nullptr};
+	SepConvImpl(int64_t in_planes, int64_t out_planes, int64_t kernel_size, int64_t stride) {
+		push_back(torch::nn::Conv2d(Options(in_planes, out_planes,
+	    	                               kernel_size).stride(stride)
+										   .padding(static_cast<int64_t>(std::floor((kernel_size-1)/2)))
+	    	                               .bias(false)
+										   .groups(in_planes)));
+		push_back(torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_planes)));
+	}
 
-	explicit SepConvImpl(int64_t in_planes, int64_t out_planes, int64_t kernel_size, int64_t stride);
-
-    torch::Tensor forward(torch::Tensor x);
+    torch::Tensor forward(torch::Tensor x) {
+    	return torch::nn::SequentialImpl::forward(x);
+    }
 };
 
 TORCH_MODULE(SepConv);
 
-struct CellAImpl : public torch::nn::Module {
+struct CellAImpl : torch::nn::SequentialImpl {
 	int64_t stride{1};
 	SepConv sep_conv1{nullptr};
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
 
-	explicit CellAImpl(int64_t in_planes, int64_t out_planes, int64_t stride /*1*/);
+	CellAImpl(int64_t in_planes, int64_t out_planes, int64_t stride /*1*/);
 
 	torch::Tensor forward(torch::Tensor x);
 };
@@ -51,19 +59,20 @@ struct PNASNetAImpl : public torch::nn::Module {
 
 	int64_t in_planes;
 	std::string cell_type;
-	std::vector<CellA> layer1, layer3, layer5;
-	CellA layer2{nullptr}, layer4{nullptr};
+	torch::nn::Sequential layer1{nullptr}, layer3{nullptr}, layer5{nullptr};
+	torch::nn::Sequential layer2{nullptr}, layer4{nullptr};
 
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
-	torch::nn::Sequential linear;
+	torch::nn::Linear linear{nullptr};
 
 	explicit PNASNetAImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes);
 
-	std::vector<CellA> _make_layer(int64_t num_planes, int64_t num_cells);
-	CellA downsample(int64_t planes);
+	torch::nn::Sequential downsample(int64_t planes);
 
 	torch::Tensor forward(torch::Tensor x);
+
+	torch::nn::Sequential _make_layer(int64_t num_planes, int64_t num_cells);
 };
 
 
@@ -74,17 +83,17 @@ struct PNASNetBImpl : public torch::nn::Module {
 
 	int64_t in_planes;
 	std::string cell_type;
-	std::vector<CellB> layer1, layer3, layer5;
-	CellB layer2{nullptr}, layer4{nullptr};
+	torch::nn::Sequential layer1{nullptr}, layer3{nullptr}, layer5{nullptr};
+	torch::nn::Sequential layer2{nullptr}, layer4{nullptr};
 
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
-	torch::nn::Sequential linear;
+	torch::nn::Linear linear{nullptr};
 
-	explicit PNASNetBImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes);
+	PNASNetBImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes);
 
-	std::vector<CellB> _make_layer(int64_t num_planes, int64_t num_cells);
-	CellB downsample(int64_t planes);
+	torch::nn::Sequential _make_layer(int64_t num_planes, int64_t num_cells);
+	torch::nn::Sequential downsample(int64_t planes);
 
 	torch::Tensor forward(torch::Tensor x);
 };

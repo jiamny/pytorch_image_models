@@ -13,21 +13,45 @@ int main() {
 
 	// Device
 	auto cuda_available = torch::cuda::is_available();
-	torch::Device device(cuda_available ? torch::kCUDA : torch::kCPU);
+
+	torch::Device device = torch::Device(torch::kCPU);
+
+	if( cuda_available ) {
+		int gpu_id = 0;
+		device = torch::Device(torch::kCUDA, gpu_id);
+
+		if(gpu_id >= 0) {
+			if(gpu_id >= torch::getNumGPUs()) {
+				std::cout << "No GPU id " << gpu_id << " abailable, use CPU." << std::endl;
+				device = torch::Device(torch::kCPU);
+				cuda_available = false;
+			} else {
+				device = torch::Device(torch::kCUDA, gpu_id);
+			}
+		} else {
+			device = torch::Device(torch::kCPU);
+			cuda_available = false;
+		}
+	}
+
+
 	std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
+
+	std::cout << device << '\n';
 
 	std::vector<int64_t> nblocks = {6,12,24,16};
 
-	DenseNet net = DenseNet(nblocks, 12,  0.5, 10);
+	auto net = DenseNet(nblocks, 12,  0.5, 10);
 	net->to(device);
 	auto dict = net->named_parameters();
 	for (auto n = dict.begin(); n != dict.end(); n++) {
-		std::cout<<(*n).key()<<std::endl;
+		std::cout<< (*n).key() << std::endl;
+		(*n).value().to(device);
 	}
 
 	std::cout << "Test model ..." << std::endl;
-	torch::Tensor x = torch::randn({1,3,32,32});
-	torch::Tensor y = net(x);
+	torch::Tensor x = torch::randn({1,3,32,32}).to(device);
+	torch::Tensor y = net->forward(x);
 	std::cout << y << std::endl;
 
 	// Hyper parameters
@@ -39,17 +63,12 @@ int main() {
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
 
-	bool saveBestModel{false};
-
-	const std::string CIFAR_data_path = "./data/cifar/";
+	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 
 	// CIFAR10 custom dataset
 	auto train_dataset = CIFAR10(CIFAR_data_path)
-//	        .map(ConstantPad(4))
-//	        .map(RandomHorizontalFlip())
-//	        .map(RandomCrop({image_size, image_size}))
 			.map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 
@@ -58,9 +77,6 @@ int main() {
 	std::cout << "num_train_samples: " << num_train_samples << std::endl;
 
 	auto test_dataset = CIFAR10(CIFAR_data_path, CIFAR10::Mode::kTest)
-//    	    .map(ConstantPad(4))
-//    		.map(RandomHorizontalFlip())
-//    		.map(RandomCrop({image_size, image_size}))
 		    .map(torch::data::transforms::Normalize<>({0.4914, 0.4822, 0.4465}, {0.2023, 0.1994, 0.2010}))
 	        .map(torch::data::transforms::Stack<>());
 
@@ -87,7 +103,6 @@ int main() {
 
 	auto current_learning_rate = learning_rate;
 	double best_acc{0.0};
-	std::string PATH = "./models/densenet.pth";
 
 	// Train the model
 	for (size_t epoch = 0; epoch != num_epochs; ++epoch) {
@@ -170,17 +185,8 @@ int main() {
 
 	    std::cout << "Testset - Loss: " << test_sample_mean_loss << ", Accuracy: " << test_accuracy << '\n';
 
-	    if( saveBestModel )
-	    	if( test_accuracy > best_acc ) {
-	    		torch::save(model, PATH);
-	    		best_acc = test_accuracy;
-	    	}
 	}
 
-	if( saveBestModel ) {
-		model = DenseNet(nblocks, 12,  0.5, 10);;
-		torch::load(model, PATH);
-	}
 
     float class_correct[10];
     float class_total[10];
@@ -189,6 +195,7 @@ int main() {
     	class_total[i] = 0.0;
     }
 
+    model->eval();
     torch::NoGradGuard no_grad;
 
     for (const auto& batch : *test_loader) {

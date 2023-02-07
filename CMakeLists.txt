@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 project(pytorch_image_models VERSION 1.0.0 LANGUAGES CXX)
 
@@ -7,24 +7,78 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(DOWNLOAD_DATASETS "Automatically download required datasets at build-time." OFF)
 option(CREATE_SCRIPTMODULES "Automatically create all required scriptmodule files at build-time (requires python3)." OFF)
 
-set(PYTORCH_VERSION "1.10.1")
+set(PYTORCH_VERSION "1.13.1")
+
+set(USE_CPU_ONLY NO)
+
+if( NOT USE_CPU_ONLY )
+
+	find_package(PythonInterp REQUIRED)
+	
+	if(NOT DEFINED CUDA_ARCHITECTURES)
+		# change based on your GPU. check at: https://developer.nvidia.com/cuda-gpus
+   		set(CUDA_ARCHITECTURES 86)
+	endif()
+	
+	# change libtorch path
+	set( LIBTORCH_PATH "/home/stree/libtorch_gpu" )
+	
+	
+	set( CUDA_HOME /usr/local/cuda)
+	set( CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda )
+	set( CUDA_CUDART_LIBRARY /usr/local/cuda-11.7/targets/x86_64-linux/lib/libcudart.so )
+	set( CUDA_nvrtc_LIBRARY /usr/local/cuda-11.7/targets/x86_64-linux/lib/libnvrtc.so )
+	set( CUDA_curand_LIBRARY /usr/local/cuda-11.7/targets/x86_64-linux/lib/libcurand.so )
+	set( CUDA_cufft_LIBRARY /usr/local/cuda-11.7/targets/x86_64-linux/lib/libcufft.so )
+	set( CUDA_cublas_LIBRARY /usr/local/cuda-11.7/targets/x86_64-linux/lib/libcublas.so )
+	set( CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc )
+	# set( CUDA_cublas_device_LIBRARY /usr/local/cuda/lib64 )
+	set( CUDA_INCLUDE_DIRS /usr/local/cuda/include )
+	# SET(CMAKE_CUDA_COMPILER_ENV_VAR /usr/local/cuda/bin/nvcc)
+
+	set(Torch_DIR "${LIBTORCH_PATH}/share/cmake/Torch" )
+	#--------------------------------------------------------------------------------------------
+	# following line solve the issue of Can't link a project using cmake with OpenCV and LibTorch
+	#-------------------------------------------------------------------------------------------- 
+
+	list(APPEND CMAKE_PREFIX_PATH "${LIBTORCH_PATH}/share/cmake")
+             
+	set(CMAKE_MODULE_PATH "${LIBTORCH_PATH}/share/cmake/Torch")  
+	# add torch package
+	find_package(Torch REQUIRED PATHS "${LIBTORCH_PATH}") 
+else()
+	# change libtorch path
+	set( LIBTORCH_PATH "/home/stree/libtorch_cpu" )
+	
+	set(Torch_DIR "${LIBTORCH_PATH}/share/cmake/Torch" )
+	#--------------------------------------------------------------------------------------------
+	# following line solve the issue of Can't link a project using cmake with OpenCV and LibTorch
+	#-------------------------------------------------------------------------------------------- 
+
+	list(APPEND CMAKE_PREFIX_PATH "${LIBTORCH_PATH}/share/cmake")
+             
+	set(CMAKE_MODULE_PATH "${LIBTORCH_PATH}/share/cmake/Torch")    
+	# add torch package
+	find_package(Torch ${PYTORCH_VERSION} EXACT QUIET PATHS "${LIBTORCH_PATH}") 
+endif()
 
 set(CMAKE_CXX_STANDARD 14)
-
-#--------------------------------------------------------------------------------------------
-# following line solve the issue of Can't link a project using cmake with OpenCV and LibTorch
-# -------------------------------------------------------------------------------------------
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/libtorch/share/cmake")
-
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/libtorch/share/cmake/Torch")
-
-# add torch package
-find_package(Torch ${PYTORCH_VERSION} EXACT QUIET PATHS "${CMAKE_SOURCE_DIR}/libtorch")
 
 message(STATUS "Torch library status:")
 message(STATUS "    version: ${Torch_VERSION}")
 message(STATUS "    libraries: ${TORCH_LIBRARIES}")
 message(STATUS "    include path: ${TORCH_INCLUDE_DIRS}") 
+
+# add opencv package to the project
+FIND_PACKAGE( OpenCV 4.5.4 REQUIRED )
+INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} ) 
+
+message(STATUS "OpenCV library status:")
+message(STATUS "    version: ${OpenCV_VERSION}")
+message(STATUS "    libraries: ${OpenCV_LIBS}")
+message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
+
+INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} ) 
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lm -ldl")
 
@@ -33,6 +87,12 @@ set(CMAKE_CXX_STANDARD 17) # To use C++ <filesystem>
 
 # use openmp
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+
+find_package(OpenMP)
+
+if(OpenMP_CXX_FOUND)
+    list(APPEND requiredlibs "OpenMP::OpenMP_CXX")
+endif()
 
 # --- AlexNet torch_cifar10
 add_executable(AlexNet_cifar10)
@@ -152,6 +212,7 @@ set_target_properties(MobileNet_cifar10 PROPERTIES
   CXX_STANDARD_REQUIRED YES
 )
 
+
 # ---------------------------------------------------------------------
 # --- PnasNet torch_cifar10
 add_executable(PnasNet_cifar10)
@@ -162,12 +223,14 @@ target_sources(PnasNet_cifar10 PRIVATE  PnasNet/main.cpp
     cifar10.h
 )
 
+
 target_link_libraries(PnasNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(PnasNet_cifar10 PROPERTIES
   CXX_STANDARD 14
   CXX_STANDARD_REQUIRED YES
 )
+
 
 # ---------------------------------------------------------------------
 # --- PreactResNet torch_cifar10
@@ -202,7 +265,6 @@ set_target_properties(RegNet_cifar10 PROPERTIES
   CXX_STANDARD 14
   CXX_STANDARD_REQUIRED YES
 )
-
 
 # ---------------------------------------------------------------------
 # --- ResNet torch_cifar10
@@ -255,3 +317,7 @@ set_target_properties(VGG_cifar10 PROPERTIES
   CXX_STANDARD 14
   CXX_STANDARD_REQUIRED YES
 )
+
+# Add  sub-projects:
+#add_subdirectory("ResNet")
+

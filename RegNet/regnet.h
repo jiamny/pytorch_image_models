@@ -39,10 +39,10 @@ struct RegNetImpl : public torch::nn::Module {
   std::map<std::string, double> cfg2;
   torch::nn::Conv2d conv1{nullptr};
   torch::nn::BatchNorm2d bn1{nullptr};
-  std::vector<BlockReg> layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
+  torch::nn::Sequential layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
   torch::nn::Linear linear{nullptr};
 
-  std::vector<BlockReg> _make_layer(int64_t idx);
+  torch::nn::Sequential _make_layer(int64_t idx);
 
   explicit RegNetImpl(std::map<std::string, std::vector<int64_t>> cfg,
 		  std::map<std::string, double> cfg2, int64_t num_classes);

@@ -12,19 +12,42 @@ int main() {
 
 	// Device
 	auto cuda_available = torch::cuda::is_available();
-	torch::Device device(cuda_available ? torch::kCUDA : torch::kCPU);
+
+	torch::Device device = torch::Device(torch::kCPU);
+
+	if( cuda_available ) {
+		int gpu_id = 0;
+		device = torch::Device(torch::kCUDA, gpu_id);
+
+		if(gpu_id >= 0) {
+			if(gpu_id >= torch::getNumGPUs()) {
+				std::cout << "No GPU id " << gpu_id << " abailable, use CPU." << std::endl;
+				device = torch::Device(torch::kCPU);
+				cuda_available = false;
+			} else {
+				device = torch::Device(torch::kCUDA, gpu_id);
+			}
+		} else {
+			device = torch::Device(torch::kCPU);
+			cuda_available = false;
+		}
+	}
+
+
 	std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
 
+	std::cout << device << '\n';
+
 	DPN net = DPN26(10);
-	net->to(device);
-	auto dict = net->named_parameters();
+	net.to(device);
+	auto dict = net.named_parameters();
 	for (auto n = dict.begin(); n != dict.end(); n++) {
 		std::cout<<(*n).key()<<std::endl;
 	}
 
 	std::cout << "Test model ..." << std::endl;
-	torch::Tensor x = torch::randn({1,3,32,32});
-	torch::Tensor y = net(x);
+	torch::Tensor x = torch::randn({1,3,32,32}).to(device);
+	torch::Tensor y = net.forward(x);
 	std::cout << y << std::endl;
 
 	// Hyper parameters
@@ -36,9 +59,8 @@ int main() {
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
 
-	bool saveBestModel{false};
 
-	const std::string CIFAR_data_path = "./data/cifar/";
+	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 
@@ -68,17 +90,16 @@ int main() {
 
 	// Model
 	DPN model = DPN26(10);
-	model->to(device);
+	model.to(device);
 
 	// Optimizer
-	torch::optim::Adam optimizer(model->parameters(), torch::optim::AdamOptions(learning_rate));
+	torch::optim::Adam optimizer(model.parameters(), torch::optim::AdamOptions(learning_rate));
 
 	// Set floating point output precision
 	std::cout << std::fixed << std::setprecision(4);
 
 	auto current_learning_rate = learning_rate;
 	double best_acc{0.0};
-	std::string PATH = "./models/dpn.pth";
 
 	// Train the model
 	for (size_t epoch = 0; epoch != num_epochs; ++epoch) {
@@ -88,7 +109,7 @@ int main() {
 	    double running_loss = 0.0;
 	    size_t num_correct = 0;
 
-	    model->train();
+	    model.train();
 	    torch::AutoGradMode enable_grad(true);
 
 	    for (auto& batch : *train_loader) {
@@ -97,7 +118,7 @@ int main() {
 	        auto target = batch.target.to(device);
 
 	        // Forward pass
-	        auto output = model->forward(data);
+	        auto output = model.forward(data);
 
 	        // Calculate loss
 	        auto loss = torch::nn::functional::cross_entropy(output, target);
@@ -135,7 +156,7 @@ int main() {
 	    std::cout << "Testing...\n";
 
 	    // Test the model
-	    model->eval();
+	    model.eval();
 	    torch::NoGradGuard no_grad;
 
 	    double test_loss = 0.0;
@@ -145,7 +166,7 @@ int main() {
 	        auto data = batch.data.to(device);
 	        auto target = batch.target.to(device);
 
-	        auto output = model->forward(data);
+	        auto output = model.forward(data);
 
 	        auto loss = torch::nn::functional::cross_entropy(output, target);
 	        test_loss += loss.item<double>() * data.size(0);
@@ -161,16 +182,6 @@ int main() {
 
 	    std::cout << "Testset - Loss: " << test_sample_mean_loss << ", Accuracy: " << test_accuracy << '\n';
 
-	    if( saveBestModel )
-	    	if( test_accuracy > best_acc ) {
-	    		torch::save(model, PATH);
-	    		best_acc = test_accuracy;
-	    	}
-	}
-
-	if( saveBestModel ) {
-		model = DPN26(10);;
-		torch::load(model, PATH);
 	}
 
     float class_correct[10];
@@ -180,13 +191,14 @@ int main() {
     	class_total[i] = 0.0;
     }
 
+    model.eval();
     torch::NoGradGuard no_grad;
 
     for (const auto& batch : *test_loader) {
         auto images = batch.data.to(device);
         auto labels = batch.target.to(device);
 
-        auto outputs = model->forward(images);
+        auto outputs = model.forward(images);
         auto prediction = outputs.argmax(1);
 
         for (int i = 0; i < batch_size; ++i) {

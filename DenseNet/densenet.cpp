@@ -5,10 +5,14 @@ using Options = torch::nn::Conv2dOptions;
 
 
 RdBottleneckImpl::RdBottleneckImpl(int64_t in_planes, int64_t growth_rate) {
-	 this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(in_planes));
-	 this->conv1 = torch::nn::Conv2d(Options(in_planes, 4*growth_rate, 1).bias(false));
-	 this->bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(4*growth_rate));
-	 this->conv2 = torch::nn::Conv2d(Options(4*growth_rate, growth_rate, 3).padding(1).bias(false));
+	this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(in_planes));
+	this->conv1 = torch::nn::Conv2d(Options(in_planes, 4*growth_rate, 1).bias(false));
+	this->bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(4*growth_rate));
+	this->conv2 = torch::nn::Conv2d(Options(4*growth_rate, growth_rate, 3).padding(1).bias(false));
+	register_module("conv1", conv1);
+	register_module("bn1", bn1);
+	register_module("conv2", conv2);
+	register_module("bn2", bn2);
 }
 
 
@@ -24,6 +28,8 @@ torch::Tensor RdBottleneckImpl::forward(torch::Tensor x) {
 TransitionImpl::TransitionImpl(int64_t in_planes, int64_t out_planes){
 	this->bn = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(in_planes));
 	this->conv = torch::nn::Conv2d(Options(in_planes, out_planes, 1).bias(false));
+	register_module("conv", conv);
+	register_module("bn", bn);
 }
 
 torch::Tensor TransitionImpl::forward(torch::Tensor x){
@@ -65,46 +71,60 @@ DenseNetImpl::DenseNetImpl(std::vector<int64_t> nblocks, int64_t growth_rate, do
 
 	this->bn = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(num_planes));
 	this->linear = torch::nn::Linear(num_planes, num_classes);
+
+	register_module("conv1", conv1);
+	register_module("trans1", trans1);
+	register_module("trans2", trans2);
+	register_module("trans3", trans3);
+
+	register_module("dense1", dense1);
+	register_module("dense2", dense2);
+	register_module("dense3", dense3);
+	register_module("dense4", dense4);
+
+	register_module("bn", bn);
+	register_module("linear", linear);
+
+    // Initializing weights
+    for (auto& module : modules(/*include_self=*/false)) {
+    	if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
+    		torch::nn::init::kaiming_normal_(
+            M->weight,
+            /*a=*/0,
+            torch::kFanOut,
+            torch::kReLU);
+    	else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
+    		torch::nn::init::constant_(M->weight, 1);
+    		torch::nn::init::constant_(M->bias, 0);
+        } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get())) {
+    		torch::nn::init::normal_(M->weight, 0.0, 0.01);
+    		torch::nn::init::constant_(M->bias, 0);
+        }
+    }
 }
 
 torch::Tensor DenseNetImpl::forward(torch::Tensor x) {
     auto out = conv1->forward(x);
 
-    for( size_t i = 0; i < dense1.size(); i++ ) {
-    	out = dense1[i]->forward(out);
-    	//std::cout << "se1 - " << i << " " << out.sizes() << std::endl;
-    }
-
+    out = dense1->forward(out);
     out = trans1->forward(out);
-
-    //out = self.trans1(self.dense1(out))
-    for( size_t i = 0; i < dense2.size(); i++ )
-    	out = dense2[i]->forward(out);
-
+    out = dense2->forward(out);
     out = trans2->forward(out);
-
-    // out = self.trans2(self.dense2(out))
-    for( size_t i = 0; i < dense3.size(); i++ )
-    	out = dense3[i]->forward(out);
-
+    out = dense3->forward(out);
     out = trans3->forward(out);
+    out = dense4->forward(out);
 
-    // out = self.trans3(self.dense3(out))
-    for( size_t i = 0; i < dense4.size(); i++ )
-    	out = dense4[i]->forward(out);
-
-    // out = self.dense4(out)
-     out = torch::avg_pool2d(torch::relu(bn->forward(out)), 4);
-     out = out.view({out.size(0), -1});
-     out = linear->forward(out);
-     return out;
+    out = torch::avg_pool2d(torch::relu(bn->forward(out)), 4);
+    out = out.view({out.size(0), -1});
+    out = linear->forward(out);
+    return out;
 }
 
-std::vector<RdBottleneck> DenseNetImpl::_make_dense_layers(int64_t in_planes, int64_t nblock) {
-	std::vector<RdBottleneck> layers;
+torch::nn::Sequential DenseNetImpl::_make_dense_layers(int64_t in_planes, int64_t nblock) {
+	torch::nn::Sequential layers;
 
 	for(int i = 0; i < nblock; i++ ) {
-	    layers.push_back(RdBottleneck(in_planes, this->growth_rate));
+	    layers->push_back(RdBottleneck(in_planes, this->growth_rate));
 	    in_planes += this->growth_rate;
 	}
 	return layers;

@@ -14,19 +14,43 @@ int main() {
 
 	// Device
 	auto cuda_available = torch::cuda::is_available();
-	torch::Device device(cuda_available ? torch::kCUDA : torch::kCPU);
+
+	torch::Device device = torch::Device(torch::kCPU);
+
+	if( cuda_available ) {
+		int gpu_id = 0;
+		device = torch::Device(torch::kCUDA, gpu_id);
+
+		if(gpu_id >= 0) {
+			if(gpu_id >= torch::getNumGPUs()) {
+				std::cout << "No GPU id " << gpu_id << " abailable, use CPU." << std::endl;
+				device = torch::Device(torch::kCPU);
+				cuda_available = false;
+			} else {
+				device = torch::Device(torch::kCUDA, gpu_id);
+			}
+		} else {
+			device = torch::Device(torch::kCPU);
+			cuda_available = false;
+		}
+	}
+
+
 	std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
 
-	auto net = AlexNetImpl( 10 );
-	net.to(device);
-	auto dict = net.named_parameters();
+	std::cout << device << '\n';
+
+	auto net = AlexNet( 10 );
+	net->to(device);
+	auto dict = net->named_parameters();
 	for (auto n = dict.begin(); n != dict.end(); n++) {
 		std::cout<<(*n).key()<<std::endl;
 	}
 
 	std::cout << "Test model ..." << std::endl;
 	torch::Tensor x = torch::randn({1,3,32,32});
-	torch::Tensor y = net.forward(x);
+	x = x.to(device);
+	torch::Tensor y = net->forward(x);
 	std::cout << y << std::endl;
 
 	// Hyper parameters
@@ -40,7 +64,7 @@ int main() {
 
 	bool saveBestModel{false};
 
-	const std::string CIFAR_data_path = "./data/cifar/";
+	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 

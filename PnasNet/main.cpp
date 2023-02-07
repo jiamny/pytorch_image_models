@@ -11,10 +11,18 @@ int main() {
 
 	std::cout << "PnasNet\n\n";
 
-	// Device
-	auto cuda_available = torch::cuda::is_available();
-	torch::Device device(cuda_available ? torch::kCUDA : torch::kCPU);
-	std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
+	bool cpu_only = false;
+
+	torch::Device device( torch::kCPU );
+
+	if( ! cpu_only ) {
+		// Device
+		auto cuda_available = torch::cuda::is_available();
+		device = cuda_available ? torch::Device(torch::kCUDA) : torch::Device(torch::kCPU);
+		std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
+	} else {
+		std::cout << "Training on CPU." << '\n';
+	}
 
 	PNASNetA net = PNASNetA(6, 32, 10);
 	net->to(device);
@@ -25,8 +33,8 @@ int main() {
 	}
 
 	std::cout << "Test model ..." << std::endl;
-	torch::Tensor x = torch::randn({1,3,32,32});
-	torch::Tensor y = net(x);
+	torch::Tensor x = torch::randn({1,3,32,32}).to(device);
+	torch::Tensor y = net->forward(x);
 	std::cout << y << std::endl;
 
 	// Hyper parameters
@@ -40,7 +48,7 @@ int main() {
 
 	bool saveBestModel{false};
 
-	const std::string CIFAR_data_path = "/root/cifar/";
+	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 
@@ -183,6 +191,7 @@ int main() {
     	class_total[i] = 0.0;
     }
 
+    model->eval();
     torch::NoGradGuard no_grad;
 
     for (const auto& batch : *test_loader) {

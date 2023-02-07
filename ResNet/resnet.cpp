@@ -1,198 +1,243 @@
 #include "resnet.h"
-
 using Options = torch::nn::Conv2dOptions;
 
-BasicBlockImpl::BasicBlockImpl(int64_t in_planes, int64_t planes, int64_t stride) {
-	if( this->stride != stride ) this->stride = stride;
+BasicBlock::BasicBlock(int64_t in_planes, int64_t planes, int64_t stride_) : shortcut(torch::nn::Sequential()) {
 
-	this->conv1 = torch::nn::Conv2d(Options(in_planes, planes, 3).stride(this->stride).padding(1).bias(false));
-	this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
+	  if( stride != stride_ ) stride = stride_;
 
-	this->conv2 = torch::nn::Conv2d(Options(planes, planes, 3).stride(1).padding(1).bias(false));
+	  conv1 = torch::nn::Conv2d(Options(in_planes, planes, 3).stride(stride).padding(1).bias(false));
+	  bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
 
-	this->bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
+	  conv2 = torch::nn::Conv2d(Options(planes, planes, 3).stride(1).padding(1).bias(false));
+
+	  bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
 
 
-	if( this->stride != 1 || in_planes != this->expansion*planes ) {
-	    this->shortcut = torch::nn::Sequential(
-	            		torch::nn::Conv2d(Options(in_planes, this->expansion*planes, 1).stride(this->stride).bias(false)),
-						torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(this->expansion*planes)));
-	    useShortcut = true;
-	}
+	  if( stride != 1 || in_planes != expansion*planes ) {
+	  	   shortcut = torch::nn::Sequential(
+	  	            		torch::nn::Conv2d(Options(in_planes, expansion*planes, 1).stride(stride).bias(false)),
+	  						torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(expansion*planes)));
+	  }
+
+	  register_module("conv1", conv1);
+	  register_module("bn1", bn1);
+	  register_module("conv2", conv2);
+	  register_module("bn2", bn2);
+
+	  if(! shortcut->is_empty()) {
+	        register_module("shortcut", shortcut);
+	  }
 }
 
-torch::Tensor BasicBlockImpl::forward(torch::Tensor x) {
+torch::Tensor BasicBlock::forward(torch::Tensor x) {
+	  at::Tensor residual(x.clone());
 
-  auto out = conv1->forward(x);
-  out = bn1->forward(out).relu_();
+	  x = conv1->forward(x);
+	  x = bn1->forward(x);
+	  x = torch::relu(x);
 
-  out = conv2->forward(out);
-  out = bn2->forward(out);
+	  x = conv2->forward(x);
+	  x = bn2->forward(x);
 
-  if( this->useShortcut )
-      out += this->shortcut->forward(x);
-  else
-	  out += x;
+	  if (! shortcut->is_empty()){
+	       residual = shortcut->forward(residual);
+	  }
 
-  return out.relu_();
+	  x += residual;
+	  x = torch::relu(x);
+
+	  return x;
 }
 
-Bottleneck_Impl::Bottleneck_Impl(int64_t in_planes, int64_t planes, int64_t stride) {
+Bottleneck::Bottleneck(int64_t in_planes, int64_t planes, int64_t stride_) : shortcut(torch::nn::Sequential()) {
 
-	if( this->stride != stride ) this->stride = stride;
+	  if( stride != stride_ ) stride = stride_;
 
-	this->conv1 = torch::nn::Conv2d(Options(in_planes, planes, 1).bias(false));
+	  conv1 = torch::nn::Conv2d(Options(in_planes, planes, 1).bias(false));
 
-	this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
+	  bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
 
-	this->conv2 = torch::nn::Conv2d(Options(planes, planes, 3).stride(this->stride).padding(1).bias(false));
-	this->bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
+	  conv2 = torch::nn::Conv2d(Options(planes, planes, 3).stride(stride).padding(1).bias(false));
+	  bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(planes));
 
-	this->conv3 = torch::nn::Conv2d(Options(planes, this->expansion *planes,1).bias(false));
-	this->bn3 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(this->expansion*planes));
+	  conv3 = torch::nn::Conv2d(Options(planes, expansion *planes,1).bias(false));
+	  bn3 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(expansion*planes));
 
 
-	if( this->stride != 1 || in_planes != this->expansion*planes ) {
-	    this->shortcut = torch::nn::Sequential(
-	    		torch::nn::Conv2d(Options(in_planes, this->expansion*planes, 1).stride(this->stride).bias(false)),
-				torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(this->expansion*planes)));
-	    this->useShortcut = true;
-	}
+	  if( stride != 1 || in_planes != expansion*planes ) {
+		  shortcut = torch::nn::Sequential(
+		    		torch::nn::Conv2d(Options(in_planes, expansion*planes, 1).stride(stride).bias(false)),
+					torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(expansion*planes)));
+	  }
+
+	  register_module("conv1", conv1);
+	  register_module("bn1", bn1);
+	  register_module("conv2", conv2);
+	  register_module("bn2", bn2);
+	  register_module("conv3", conv3);
+	  register_module("bn3", bn3);
+
+	  if(! shortcut->is_empty()) {
+		  register_module("shortcut", shortcut);
+	  }
 }
 
-torch::Tensor Bottleneck_Impl::forward(torch::Tensor X) {
+torch::Tensor Bottleneck::forward(torch::Tensor x) {
+	  at::Tensor residual(x.clone());
 
-  auto out = conv1->forward(X);
-  out = bn1->forward(out).relu_();
+	  x = conv1->forward(x);
+	  x = bn1->forward(x).relu_();
 
-  out = conv2->forward(out);
-  out = bn2->forward(out).relu_();
+	  x = conv2->forward(x);
+	  x = bn2->forward(x).relu_();
 
-  out = conv3->forward(out);
-  out = bn3->forward(out);
+	  x = conv3->forward(x);
+	  x = bn3->forward(x);
 
-  if( this->useShortcut )
-      out += this->shortcut->forward(X);
-  else
-	  out += X;
+	  if (! shortcut->is_empty()){
+	       residual = shortcut->forward(residual);
+	  }
 
-  return out.relu_();
+	  x += residual;
+	  x = torch::relu(x);
+
+	  return x;
 }
 
-ResNetBBImpl::ResNetBBImpl(std::vector<int> num_blocks, int64_t num_classes) {
-	this->conv1 = torch::nn::Conv2d(Options(3, 64, 3).stride(1).padding(1).bias(false));
-	this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(64));
+ResNetBB::ResNetBB(std::vector<int> num_blocks, int64_t num_classes) {
+	    conv1 = torch::nn::Conv2d(Options(3, 64, 3).stride(1).padding(1).bias(false));
+		bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(64));
 
-	this->layer1 = _make_layer(64, num_blocks[0], 1);
-	this->layer2 = _make_layer(128, num_blocks[1], 2);
-	this->layer3 = _make_layer(256, num_blocks[2], 2);
-	this->layer4 = _make_layer(512, num_blocks[3], 2);
-	this->linear = torch::nn::Linear(512*this->expansion, num_classes);
+		layer1 = _make_layer(64, num_blocks[0]);
+		layer2 = _make_layer(128, num_blocks[1], 2);
+		layer3 = _make_layer(256, num_blocks[2], 2);
+		layer4 = _make_layer(512, num_blocks[3], 2);
+		linear = torch::nn::Linear(512 * expansion, num_classes);
+
+	    register_module("conv1", conv1);
+	    register_module("bn1", bn1);
+	    register_module("layer1", layer1);
+	    register_module("layer2", layer2);
+	    register_module("layer3", layer3);
+	    register_module("layer4", layer4);
+	    register_module("linear", linear);
+
+	    // Initializing weights
+	    for (auto& module : modules(/*include_self=*/false)) {
+	    	if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
+	    		torch::nn::init::kaiming_normal_(
+	            M->weight,
+	            /*a=*/0,
+	            torch::kFanOut,
+	            torch::kReLU);
+	    	else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
+	        torch::nn::init::constant_(M->weight, 1);
+	        torch::nn::init::constant_(M->bias, 0);
+	      }
+	    }
 }
 
-std::vector<BasicBlock> ResNetBBImpl::_make_layer(int64_t planes, int64_t blocks, int64_t stride) {
-	std::vector<int64_t> strides;
-	strides.push_back(stride);
+torch::Tensor ResNetBB::forward(torch::Tensor x) {
+	  x = bn1->forward(conv1->forward(x)).relu_();
 
-	for( int i = 0; i < (blocks-1); i++ ) //[1]*(num_blocks-1)
-		strides.push_back(1);
+	  x = layer1->forward(x);
+	  x = layer2->forward(x);
+	  x = layer3->forward(x);
+	  x = layer4->forward(x);
 
-	std::vector<BasicBlock> layers;
+	  x = torch::nn::functional::avg_pool2d(x, torch::nn::functional::AvgPool2dFuncOptions(4));
+	  x = linear->forward(x.view({x.size(0), -1}));
 
-	for( int i = 0; i < strides.size(); i++ ) {
-		layers.push_back(BasicBlock(this->in_planes, planes, strides[i]));
-		   this->in_planes = planes*this->expansion;
-	}
-
-	return layers;
+	  return x;
 }
 
-torch::Tensor ResNetBBImpl::forward(torch::Tensor x) {
-// out = self.conv1(x)
-	auto out = bn1->forward(conv1->forward(x)).relu_();
+torch::nn::Sequential ResNetBB::_make_layer(
+          int64_t planes,
+          int64_t blocks,
+          int64_t stride) {
 
-//	std::cout << out.sizes() << std::endl;
+		std::vector<int64_t> strides;
+		strides.push_back(stride);
 
-	for( int i =0; i < layer1.size(); i++ ) {
-			out = layer1[i]->forward(out);
-//			std::cout << "layer1 - " << i << " >> " << out.sizes() << std::endl;
-	}
+		for( int i = 0; i < (blocks-1); i++ ) //[1]*(num_blocks-1)
+			strides.push_back(1);
 
-	for( int i =0; i < layer2.size(); i++ )
-		out = layer2[i]->forward(out);
+		torch::nn::Sequential layers;
 
-	for( int i =0; i < layer3.size(); i++ )
-		out = layer3[i]->forward(out);
+		for( int i = 0; i < strides.size(); i++ ) {
+			layers->push_back(BasicBlock(in_planes, planes, strides[i]));
+			this->in_planes = planes*expansion;
+		}
 
-	for( int i =0; i < layer4.size(); i++ )
-		out = layer4[i]->forward(out);
-
-	// out = F.avg_pool2d(out, 4)
-    // out = out.view(out.size(0), -1)
-    // out = self.linear(out)
-	out = torch::nn::functional::avg_pool2d(out, torch::nn::functional::AvgPool2dFuncOptions(4));
-	out = linear->forward(out.view({out.size(0), -1}));
-
-	return out;
+		return layers;
 }
 
-// ----------------------
-ResNetBNImpl::ResNetBNImpl(std::vector<int> num_blocks, int64_t num_classes) {
-	this->conv1 = torch::nn::Conv2d(Options(3, 64, 3).stride(1).padding(1).bias(false));
-	this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(64));
+ResNetBN::ResNetBN(std::vector<int> num_blocks, int64_t num_classes) {
+	  conv1 = torch::nn::Conv2d(Options(3, 64, 3).stride(1).padding(1).bias(false));
+	  bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(64));
 
-	this->layer1 = _make_layer(64, num_blocks[0], 1);
-	this->layer2 = _make_layer(128, num_blocks[1], 2);
-	this->layer3 = _make_layer(256, num_blocks[2], 2);
-	this->layer4 = _make_layer(512, num_blocks[3], 2);
-	this->linear = torch::nn::Linear(512*this->expansion, num_classes);
+	  layer1 = _make_layer(64, num_blocks[0], 1);
+	  layer2 = _make_layer(128, num_blocks[1], 2);
+	  layer3 = _make_layer(256, num_blocks[2], 2);
+	  layer4 = _make_layer(512, num_blocks[3], 2);
+	  linear = torch::nn::Linear(512*expansion, num_classes);
+
+	  register_module("conv1", conv1);
+	  register_module("bn1", bn1);
+	  register_module("layer1", layer1);
+	  register_module("layer2", layer2);
+	  register_module("layer3", layer3);
+	  register_module("layer4", layer4);
+	  register_module("linear", linear);
+
+	  // Initializing weights
+	  for (auto& module : modules(/*include_self=*/false)) {
+	     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
+	    		torch::nn::init::kaiming_normal_(
+	            M->weight,
+	            /*a=*/0,
+	            torch::kFanOut,
+	            torch::kReLU);
+	    	else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
+	        torch::nn::init::constant_(M->weight, 1);
+	        torch::nn::init::constant_(M->bias, 0);
+	     }
+	  }
 }
 
-std::vector<Bottleneck_> ResNetBNImpl::_make_layer(int64_t planes, int64_t blocks, int64_t stride) {
-	std::vector<int64_t> strides;
-	strides.push_back(stride);
+torch::Tensor ResNetBN::forward(torch::Tensor x) {
+	  x = bn1->forward(conv1->forward(x)).relu_();
 
-	for( int i = 0; i < (blocks-1); i++ ) //[1]*(num_blocks-1)
-		strides.push_back(1);
+	  x = layer1->forward(x);
+	  x = layer2->forward(x);
+	  x = layer3->forward(x);
+	  x = layer4->forward(x);
 
+	  x = torch::nn::functional::avg_pool2d(x, torch::nn::functional::AvgPool2dFuncOptions(4));
+	  x = linear->forward(x.view({x.size(0), -1}));
 
-	std::vector<Bottleneck_> layers;
-
-	for( int i = 0; i < strides.size(); i++ ) {
-		layers.push_back(Bottleneck_(this->in_planes, planes, strides[i]));
-		   this->in_planes = planes*this->expansion;
-	}
-
-	return layers;
+	  return x;
 }
 
-torch::Tensor ResNetBNImpl::forward(torch::Tensor x) {
-// out = self.conv1(x)
-	auto out = bn1->forward(conv1->forward(x)).relu_();
+torch::nn::Sequential ResNetBN::_make_layer(
+        int64_t planes,
+        int64_t blocks,
+        int64_t stride) {
 
-//	std::cout << out.sizes() << std::endl;
+		std::vector<int64_t> strides;
+		strides.push_back(stride);
 
-	for( int i =0; i < layer1.size(); i++ ) {
-			out = layer1[i]->forward(out);
-//			std::cout << "layer1 - " << i << " >> " << out.sizes() << std::endl;
-	}
+		for( int i = 0; i < (blocks-1); i++ ) //[1]*(num_blocks-1)
+			strides.push_back(1);
 
-	for( int i =0; i < layer2.size(); i++ )
-		out = layer2[i]->forward(out);
+		torch::nn::Sequential layers;
 
-	for( int i =0; i < layer3.size(); i++ )
-		out = layer3[i]->forward(out);
+		for( int i = 0; i < strides.size(); i++ ) {
+			layers->push_back(BasicBlock(in_planes, planes, strides[i]));
+			this->in_planes = planes*expansion;
+		}
 
-	for( int i =0; i < layer4.size(); i++ )
-		out = layer4[i]->forward(out);
-
-	// out = F.avg_pool2d(out, 4)
-    // out = out.view(out.size(0), -1)
-    // out = self.linear(out)
-	out = torch::nn::functional::avg_pool2d(out, torch::nn::functional::AvgPool2dFuncOptions(4));
-	out = linear->forward(out.view({out.size(0), -1}));
-
-	return out;
+		return layers;
 }
 
 ResNetBB ResNet18(int64_t num_classes) {
@@ -214,11 +259,3 @@ ResNetBN ResNet101(int64_t num_classes) {
 	std::vector<int> blocks = {3, 4, 23, 3};
     return ResNetBN(blocks, num_classes);
 }
-
-ResNetBN ResNet152(int64_t num_classes) {
-	std::vector<int> blocks = {3, 8, 36, 3};
-    return ResNetBN(blocks, num_classes);
-}
-
-
-

@@ -6,7 +6,7 @@
 // "Densely Connected Convolutional Networks"
 // <https://arxiv.org/pdf/1608.06993.pdf>
 
-struct RdBottleneckImpl : public torch::nn::Module {
+struct RdBottleneckImpl: public torch::nn::Module {
 	torch::nn::BatchNorm2d bn1{nullptr}, bn2{nullptr};
 	torch::nn::Conv2d conv1{nullptr}, conv2{nullptr};
 
@@ -29,14 +29,14 @@ TORCH_MODULE(Transition);
 struct DenseNetImpl : public torch::nn::Module {
 	torch::nn::BatchNorm2d bn{nullptr};
 	torch::nn::Conv2d conv1{nullptr};
-	std::vector<RdBottleneck> dense1, dense2, dense3, dense4;
+	torch::nn::Sequential dense1, dense2, dense3, dense4;
 	Transition trans1{nullptr}, trans2{nullptr}, trans3{nullptr};
 	int64_t growth_rate;
 	torch::nn::Linear linear{nullptr};
 
 	explicit DenseNetImpl(std::vector<int64_t> nblocks, int64_t growth_rate, double reduction, int64_t num_classes);
 	torch::Tensor forward(torch::Tensor x);
-	std::vector<RdBottleneck> _make_dense_layers(int64_t in_planes, int64_t nblock);
+	torch::nn::Sequential  _make_dense_layers(int64_t in_planes, int64_t nblock);
 };
 
 TORCH_MODULE(DenseNet);

@@ -45,14 +45,15 @@ TORCH_MODULE(PreActBottleneck);
 struct PreActResNetBBImpl : public torch::nn::Module {
 	int64_t expansion{1};
 	int64_t in_planes = 64;
-	std::vector<PreActBlock> layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
+	torch::nn::Sequential layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::Linear linear{nullptr};
 
 	explicit PreActResNetBBImpl(std::vector<int64_t> num_blocks, int64_t num_classes);
 
-	std::vector<PreActBlock> _make_layer(int64_t planes, int64_t num_blocks, int64_t stride);
 	torch::Tensor forward(torch::Tensor x);
+
+	torch::nn::Sequential _make_layer(int64_t planes, int64_t num_blocks, int64_t stride);
 };
 
 TORCH_MODULE(PreActResNetBB);
@@ -60,14 +61,15 @@ TORCH_MODULE(PreActResNetBB);
 struct PreActResNetBNImpl : public torch::nn::Module {
 	int64_t expansion{4};
 	int64_t in_planes = 64;
-	std::vector<PreActBottleneck> layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
+	torch::nn::Sequential layer1{nullptr}, layer2{nullptr}, layer3{nullptr}, layer4{nullptr};
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::Linear linear{nullptr};
 
 	explicit PreActResNetBNImpl(std::vector<int64_t> num_blocks, int64_t num_classes);
 
-	std::vector<PreActBottleneck> _make_layer(int64_t planes, int64_t num_blocks, int64_t stride);
 	torch::Tensor forward(torch::Tensor x);
+
+	torch::nn::Sequential _make_layer(int64_t planes, int64_t num_blocks, int64_t stride);
 };
 
 TORCH_MODULE(PreActResNetBN);

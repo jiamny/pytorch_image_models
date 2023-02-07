@@ -33,10 +33,10 @@ struct Block_Impl : public torch::nn::Module {
 	explicit Block_Impl( int64_t in_planes,
             int64_t out_planes,
             int64_t kernel_size,
-            int64_t stride,
-            int64_t expand_ratio,
-            double se_ratio,
-            double drop_rate);
+            int64_t stride_,
+            int64_t expand_ratio_,
+            double se_ratio_,
+            double drop_rate_);
 
 	torch::Tensor forward(torch::Tensor x);
 
@@ -48,14 +48,14 @@ struct EfficientNetImpl : public torch::nn::Module {
 	std::map<std::string, std::vector<int64_t>> cfg;
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
-	std::vector<Block_> layers;
-	torch::nn::Sequential linear;
+	torch::nn::Sequential layers;
+	torch::nn::Linear linear{nullptr};
 	torch::nn::AdaptiveAvgPool2d adavgpool{nullptr};
 
 	explicit EfficientNetImpl(std::map<std::string, std::vector<int64_t>> cfg, int64_t num_classes);
 
-	std::vector<Block_>  _make_layers(int64_t in_planes);
 	torch::Tensor forward(torch::Tensor x);
+	torch::nn::Sequential  _make_layers(int64_t in_planes);
 };
 
 TORCH_MODULE(EfficientNet);

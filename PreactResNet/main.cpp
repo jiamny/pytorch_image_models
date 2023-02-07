@@ -25,8 +25,8 @@ int main() {
 	}
 
 	std::cout << "Test model ..." << std::endl;
-	torch::Tensor x = torch::randn({1,3,32,32});
-	torch::Tensor y = net(x);
+	torch::Tensor x = torch::randn({1,3,32,32}).to(device);
+	torch::Tensor y = net->forward(x);
 	std::cout << y << std::endl;
 
 	// Hyper parameters
@@ -40,7 +40,7 @@ int main() {
 
 	bool saveBestModel{false};
 
-	const std::string CIFAR_data_path = "./data/cifar/";
+	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 
@@ -183,6 +183,7 @@ int main() {
     	class_total[i] = 0.0;
     }
 
+    model->eval();
     torch::NoGradGuard no_grad;
 
     for (const auto& batch : *test_loader) {
