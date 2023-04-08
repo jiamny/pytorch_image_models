@@ -16,7 +16,8 @@ struct ResNextBlockImpl : public torch::nn::Module {
 	torch::nn::Sequential shortcut{nullptr};
 	bool useShortcut = false;
 
-	ResNextBlockImpl(int64_t in_planes, int64_t cardinality, int64_t bottleneck_width, int64_t stride); // stride=1
+	ResNextBlockImpl(int64_t in_planes, int64_t cardinality,
+					 int64_t bottleneck_width, int64_t stride, torch::Device device); // stride=1
 
 	torch::Tensor forward(torch::Tensor x);
 };
@@ -35,9 +36,11 @@ struct ResNextImpl : public torch::nn::Module {
 
   std::vector<ResNextBlock> _make_layer(
           int64_t blocks,
-          int64_t stride);
+          int64_t stride,
+		  torch::Device device);
 
-  explicit ResNextImpl(std::vector<int> num_blocks, int64_t cardinality, int64_t bottleneck_width, int64_t num_classes);
+  explicit ResNextImpl(std::vector<int> num_blocks, int64_t cardinality,
+		  int64_t bottleneck_width, int64_t num_classes, torch::Device device);
 
   torch::Tensor forward(torch::Tensor X);
 };
@@ -46,10 +49,10 @@ TORCH_MODULE(ResNext);
 
 
 
-ResNext ResNeXt29_2x64d(int64_t num_classes);
-ResNext ResNeXt29_4x64d(int64_t num_classes);
-ResNext ResNeXt29_8x64d(int64_t num_classes);
-ResNext ResNeXt29_32x4d(int64_t num_classes);
+ResNext ResNeXt29_2x64d(int64_t num_classes, torch::Device device=torch::kCPU);
+ResNext ResNeXt29_4x64d(int64_t num_classes, torch::Device device=torch::kCPU);
+ResNext ResNeXt29_8x64d(int64_t num_classes, torch::Device device=torch::kCPU);
+ResNext ResNeXt29_32x4d(int64_t num_classes, torch::Device device=torch::kCPU);
 
 
 

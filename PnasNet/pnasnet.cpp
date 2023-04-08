@@ -2,13 +2,15 @@
 #include "pnasnet.h"
 #include <torch/torch.h>
 
-CellAImpl::CellAImpl(int64_t in_planes, int64_t out_planes, int64_t stride_ ) {
+CellAImpl::CellAImpl(int64_t in_planes, int64_t out_planes, int64_t stride_ , torch::Device device) {
 	stride = stride_;
-	sep_conv1 = SepConv(in_planes, out_planes, 7, stride);
+	sep_conv1 = SepConv(in_planes, out_planes, 7, stride, device);
 
 	if( stride==2 ){
 		conv1 = torch::nn::Conv2d(Options(in_planes, out_planes, 1).stride(1).padding(0).bias(false));
 		bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_planes));
+		conv1->to(device);
+		bn1->to(device);
 
 		register_module("conv1", conv1);
 		register_module("bn1", bn1);
@@ -27,19 +29,21 @@ torch::Tensor CellAImpl::forward(torch::Tensor x){
 
 
 
-CellBImpl::CellBImpl(int64_t in_planes, int64_t out_planes, int64_t stride_ ){
+CellBImpl::CellBImpl(int64_t in_planes, int64_t out_planes, int64_t stride_, torch::Device device){
 	stride = stride_;
 
 	//Left branch
-	sep_conv1 = SepConv(in_planes, out_planes, 7, stride);
-	sep_conv2 = SepConv(in_planes, out_planes, 3, stride);
+	sep_conv1 = SepConv(in_planes, out_planes, 7, stride, device);
+	sep_conv2 = SepConv(in_planes, out_planes, 3, stride, device);
 
     //Right branch
-	sep_conv3 = SepConv(in_planes, out_planes, 5, stride);
+	sep_conv3 = SepConv(in_planes, out_planes, 5, stride, device);
 
 	if( stride==2 ) {
 		conv1 = torch::nn::Conv2d(Options(in_planes, out_planes, 1).stride(1).padding(0).bias(false));
 	    bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_planes));
+	    conv1->to(device);
+	    bn1->to(device);
 
 		register_module("conv1", conv1);
 		register_module("bn1", bn1);
@@ -48,6 +52,8 @@ CellBImpl::CellBImpl(int64_t in_planes, int64_t out_planes, int64_t stride_ ){
 	//Reduce channels
 	conv2 = torch::nn::Conv2d(Options(2*out_planes, out_planes, 1).stride(1).padding(0).bias(false));
 	bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_planes));
+	conv2->to(device);
+	bn2->to(device);
 
 	register_module("sep_conv1", sep_conv1);
 	register_module("sep_conv2", sep_conv2);
@@ -85,19 +91,22 @@ torch::Tensor CellBImpl::forward(torch::Tensor x){
 }
 
 
-PNASNetAImpl::PNASNetAImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes) {
+PNASNetAImpl::PNASNetAImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes, torch::Device device) {
 	in_planes = num_planes;
 
 	conv1 = torch::nn::Conv2d(Options(3, num_planes, 3).stride(1).padding(1).bias(false));
 	bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(num_planes));
+	conv1->to(device);
+	bn1->to(device);
 
-	layer1 = _make_layer(num_planes, 6);
-	layer2 = downsample(num_planes*2);
-	layer3 = _make_layer(num_planes*2, 6);
-	layer4 = downsample(num_planes*4);
-	layer5 = _make_layer(num_planes*4, 6);
+	layer1 = _make_layer(num_planes, 6, device);
+	layer2 = downsample(num_planes*2, device);
+	layer3 = _make_layer(num_planes*2, 6, device);
+	layer4 = downsample(num_planes*4, device);
+	layer5 = _make_layer(num_planes*4, 6, device);
 
 	linear = torch::nn::Linear(num_planes*4, num_classes);
+	linear->to(device);
 
 	register_module("conv1", conv1);
 	register_module("bn1", bn1);
@@ -109,19 +118,19 @@ PNASNetAImpl::PNASNetAImpl(int64_t num_cells, int64_t num_planes, int64_t num_cl
 	register_module("linear", linear);
 }
 
-torch::nn::Sequential PNASNetAImpl::downsample(int64_t planes) {
+torch::nn::Sequential PNASNetAImpl::downsample(int64_t planes, torch::Device device) {
 	torch::nn::Sequential layer;
-	layer->push_back( CellA(in_planes, planes, 2) );
+	layer->push_back( CellA(in_planes, planes, 2, device) );
 	in_planes = planes;
 	return layer;
 }
 
 
-torch::nn::Sequential PNASNetAImpl::_make_layer(int64_t planes, int64_t num_cells) {
+torch::nn::Sequential PNASNetAImpl::_make_layer(int64_t planes, int64_t num_cells, torch::Device device) {
 	torch::nn::Sequential layers;
 
 	for( int i = 0; i < num_cells; i++ ) {
-		layers->push_back(CellA(in_planes, planes, 1));
+		layers->push_back(CellA(in_planes, planes, 1, device));
 	    in_planes = planes;
 	}
 
@@ -144,19 +153,22 @@ torch::Tensor PNASNetAImpl::forward(torch::Tensor x) {
 }
 
 
-PNASNetBImpl::PNASNetBImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes) {
+PNASNetBImpl::PNASNetBImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes, torch::Device device) {
 	in_planes = num_planes;
 
 	conv1 = torch::nn::Conv2d(Options(3, num_planes, 3).stride(1).padding(1).bias(false));
 	bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(num_planes));
+	conv1->to(device);
+	bn1->to(device);
 
-	layer1 = _make_layer(num_planes, 6);
-	layer2 = downsample(num_planes*2);
-	layer3 = _make_layer(num_planes*2, 6);
-	layer4 = downsample(num_planes*4);
-	layer5 = _make_layer(num_planes*4, 6);
+	layer1 = _make_layer(num_planes, 6, device);
+	layer2 = downsample(num_planes*2, device);
+	layer3 = _make_layer(num_planes*2, 6, device);
+	layer4 = downsample(num_planes*4, device);
+	layer5 = _make_layer(num_planes*4, 6, device);
 
 	linear = torch::nn::Linear(num_planes*4, num_classes);
+	linear->to(device);
 
 	register_module("conv1", conv1);
 	register_module("bn1", bn1);
@@ -170,18 +182,18 @@ PNASNetBImpl::PNASNetBImpl(int64_t num_cells, int64_t num_planes, int64_t num_cl
 
 
 
-torch::nn::Sequential PNASNetBImpl::downsample(int64_t planes) {
+torch::nn::Sequential PNASNetBImpl::downsample(int64_t planes, torch::Device device) {
 	torch::nn::Sequential layer;
-	layer->push_back( CellB(in_planes, planes, 2) );
+	layer->push_back( CellB(in_planes, planes, 2, device) );
 	in_planes = planes;
 	return layer;
 }
 
-torch::nn::Sequential PNASNetBImpl::_make_layer(int64_t planes, int64_t num_cells) {
+torch::nn::Sequential PNASNetBImpl::_make_layer(int64_t planes, int64_t num_cells, torch::Device device) {
 	torch::nn::Sequential layers;
 
 	for( int i = 0; i < num_cells; i++ ) {
-		layers->push_back(CellB(in_planes, planes, 1));
+		layers->push_back(CellB(in_planes, planes, 1, device));
 	    in_planes = planes;
 	}
 

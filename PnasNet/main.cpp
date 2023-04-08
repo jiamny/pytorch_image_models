@@ -11,20 +11,12 @@ int main() {
 
 	std::cout << "PnasNet\n\n";
 
-	bool cpu_only = false;
+	// Device
+	auto cuda_available = torch::cuda::is_available();
+	torch::Device device = cuda_available ? torch::Device(torch::kCUDA) : torch::Device(torch::kCPU);
+	std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
 
-	torch::Device device( torch::kCPU );
-
-	if( ! cpu_only ) {
-		// Device
-		auto cuda_available = torch::cuda::is_available();
-		device = cuda_available ? torch::Device(torch::kCUDA) : torch::Device(torch::kCPU);
-		std::cout << (cuda_available ? "CUDA available. Training on GPU." : "Training on CPU.") << '\n';
-	} else {
-		std::cout << "Training on CPU." << '\n';
-	}
-
-	PNASNetA net = PNASNetA(6, 32, 10);
+	PNASNetA net = PNASNetA(6, 32, 10, device);
 	net->to(device);
 
 	auto dict = net->named_parameters();
@@ -41,7 +33,7 @@ int main() {
 	const int64_t image_size{32};
 	const int64_t num_classes = 10;
 	const int64_t batch_size = 100;
-	const size_t num_epochs = 3;
+	const size_t num_epochs = 20;
 	const double learning_rate = 0.001;
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
@@ -77,7 +69,7 @@ int main() {
 	        std::move(test_dataset), batch_size);
 
 	// Model
-	PNASNetB model = PNASNetB(6, 32, 10);
+	PNASNetB model = PNASNetB(6, 32, 10, device);
 	model->to(device);
 
 	// Optimizer
@@ -180,7 +172,7 @@ int main() {
 	}
 
 	if( saveBestModel ) {
-		model = PNASNetB(6, 32, 10);
+		model = PNASNetB(6, 32, 10, device);
 		torch::load(model, PATH);
 	}
 

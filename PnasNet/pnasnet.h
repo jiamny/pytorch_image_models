@@ -10,13 +10,17 @@ using Options = torch::nn::Conv2dOptions;
 
 struct SepConvImpl : torch::nn::SequentialImpl {
     //Separable Convolution.'''
-	SepConvImpl(int64_t in_planes, int64_t out_planes, int64_t kernel_size, int64_t stride) {
-		push_back(torch::nn::Conv2d(Options(in_planes, out_planes,
-	    	                               kernel_size).stride(stride)
-										   .padding(static_cast<int64_t>(std::floor((kernel_size-1)/2)))
-	    	                               .bias(false)
-										   .groups(in_planes)));
-		push_back(torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_planes)));
+	SepConvImpl(int64_t in_planes, int64_t out_planes, int64_t kernel_size, int64_t stride, torch::Device device) {
+		auto t = torch::nn::Conv2d(Options(in_planes, out_planes,
+                kernel_size).stride(stride)
+				   .padding(static_cast<int64_t>(std::floor((kernel_size-1)/2)))
+                .bias(false)
+				   .groups(in_planes));
+		t->to(device);
+		push_back(t);
+		auto z = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_planes));
+		z->to(device);
+		push_back(z);
 	}
 
     torch::Tensor forward(torch::Tensor x) {
@@ -32,7 +36,7 @@ struct CellAImpl : torch::nn::SequentialImpl {
 	torch::nn::Conv2d conv1{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr};
 
-	CellAImpl(int64_t in_planes, int64_t out_planes, int64_t stride /*1*/);
+	CellAImpl(int64_t in_planes, int64_t out_planes, int64_t stride /*1*/, torch::Device device);
 
 	torch::Tensor forward(torch::Tensor x);
 };
@@ -47,7 +51,7 @@ struct CellBImpl : public torch::nn::Module {
 	torch::nn::Conv2d conv1{nullptr}, conv2{nullptr};
 	torch::nn::BatchNorm2d bn1{nullptr}, bn2{nullptr};
 
-	explicit CellBImpl(int64_t in_planes, int64_t out_planes, int64_t stride /*1*/);
+	explicit CellBImpl(int64_t in_planes, int64_t out_planes, int64_t stride /*1*/, torch::Device device);
 
 	torch::Tensor forward(torch::Tensor x);
 };
@@ -66,13 +70,13 @@ struct PNASNetAImpl : public torch::nn::Module {
 	torch::nn::BatchNorm2d bn1{nullptr};
 	torch::nn::Linear linear{nullptr};
 
-	explicit PNASNetAImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes);
+	explicit PNASNetAImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes, torch::Device device=torch::kCPU);
 
-	torch::nn::Sequential downsample(int64_t planes);
+	torch::nn::Sequential downsample(int64_t planes, torch::Device device);
 
 	torch::Tensor forward(torch::Tensor x);
 
-	torch::nn::Sequential _make_layer(int64_t num_planes, int64_t num_cells);
+	torch::nn::Sequential _make_layer(int64_t num_planes, int64_t num_cells, torch::Device device);
 };
 
 
@@ -90,10 +94,10 @@ struct PNASNetBImpl : public torch::nn::Module {
 	torch::nn::BatchNorm2d bn1{nullptr};
 	torch::nn::Linear linear{nullptr};
 
-	PNASNetBImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes);
+	PNASNetBImpl(int64_t num_cells, int64_t num_planes, int64_t num_classes, torch::Device device=torch::kCPU);
 
-	torch::nn::Sequential _make_layer(int64_t num_planes, int64_t num_cells);
-	torch::nn::Sequential downsample(int64_t planes);
+	torch::nn::Sequential _make_layer(int64_t num_planes, int64_t num_cells, torch::Device device);
+	torch::nn::Sequential downsample(int64_t planes, torch::Device device);
 
 	torch::Tensor forward(torch::Tensor x);
 };

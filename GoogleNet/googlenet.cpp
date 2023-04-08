@@ -4,13 +4,15 @@
 
 using Options = torch::nn::Conv2dOptions;
 
-InceptionImpl::InceptionImpl(int64_t in_planes, int64_t n1x1, int64_t n3x3red, int64_t n3x3, int64_t n5x5red, int64_t n5x5, int64_t pool_planes){
+InceptionImpl::InceptionImpl(int64_t in_planes, int64_t n1x1, int64_t n3x3red, int64_t n3x3, int64_t n5x5red,
+		int64_t n5x5, int64_t pool_planes, torch::Device device){
 	//# 1x1 conv branch
     b1 = torch::nn::Sequential(
     		torch::nn::Conv2d(Options(in_planes, n1x1, 1)),
 			torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(n1x1)),
             torch::nn::ReLU(true)
         );
+    b1->to(device);
 
 	//# 1x1 conv -> 3x3 conv branch
 	b2 = torch::nn::Sequential(
@@ -21,6 +23,7 @@ InceptionImpl::InceptionImpl(int64_t in_planes, int64_t n1x1, int64_t n3x3red, i
 			torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(n3x3)),
 			torch::nn::ReLU(true)
 		);
+	b2->to(device);
 
 	//# 1x1 conv -> 5x5 conv branch
 	b3 = torch::nn::Sequential(
@@ -34,6 +37,7 @@ InceptionImpl::InceptionImpl(int64_t in_planes, int64_t n1x1, int64_t n3x3red, i
 			torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(n5x5)),
 			torch::nn::ReLU(true)
 		);
+	b3->to(device);
 
 	//# 3x3 pool -> 1x1 conv branch
     b4 = torch::nn::Sequential(
@@ -42,11 +46,12 @@ InceptionImpl::InceptionImpl(int64_t in_planes, int64_t n1x1, int64_t n3x3red, i
 			torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(pool_planes)),
 			torch::nn::ReLU(true)
         );
-
+    b4->to(device);
 }
 
 
 torch::Tensor InceptionImpl::forward(torch::Tensor x){
+
 	auto y1 = b1->forward(x);
 	auto y2 = b2->forward(x);
 	auto y3 = b3->forward(x);
@@ -59,7 +64,7 @@ torch::Tensor InceptionImpl::forward(torch::Tensor x){
 	return torch::cat({y1,y2,y3,y4}, 1);
 }
 
-GoogleNetImpl::GoogleNetImpl(int64_t num_classes) {
+GoogleNetImpl::GoogleNetImpl(int64_t num_classes, torch::Device device) {
 	/*
 	this->pre_layers = torch::nn::Sequential(
 				torch::nn::Conv2d(Options(3, 192, 3).padding(1)),
@@ -69,23 +74,27 @@ GoogleNetImpl::GoogleNetImpl(int64_t num_classes) {
 	*/
 	conv1 = torch::nn::Conv2d(Options(3, 192, 3).padding(1));
 	bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(192));
+	conv1->to(device);
+	bn1->to(device);
 
-	a3 = Inception(192,  64,  96, 128, 16, 32, 32);
-	b3 = Inception(256, 128, 128, 192, 32, 96, 64);
+	a3 = Inception(192,  64,  96, 128, 16, 32, 32, device);
+	b3 = Inception(256, 128, 128, 192, 32, 96, 64, device);
 
 	maxpool = torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions(3).stride(2).padding(1));
 
-	a4 = Inception(480, 192,  96, 208, 16,  48,  64);
-	b4 = Inception(512, 160, 112, 224, 24,  64,  64);
-	c4 = Inception(512, 128, 128, 256, 24,  64,  64);
-	d4 = Inception(512, 112, 144, 288, 32,  64,  64);
-	e4 = Inception(528, 256, 160, 320, 32, 128, 128);
+	a4 = Inception(480, 192,  96, 208, 16,  48,  64, device);
+	b4 = Inception(512, 160, 112, 224, 24,  64,  64, device);
+	c4 = Inception(512, 128, 128, 256, 24,  64,  64, device);
+	d4 = Inception(512, 112, 144, 288, 32,  64,  64, device);
+	e4 = Inception(528, 256, 160, 320, 32, 128, 128, device);
 
-	a5 = Inception(832, 256, 160, 320, 32, 128, 128);
-	b5 = Inception(832, 384, 192, 384, 48, 128, 128);
+	a5 = Inception(832, 256, 160, 320, 32, 128, 128, device);
+	b5 = Inception(832, 384, 192, 384, 48, 128, 128, device);
 
 	avgpool = torch::nn::AvgPool2d(torch::nn::AvgPool2dOptions(8).stride(1));
 	linear = torch::nn::Linear(1024, num_classes);
+	avgpool->to(device);
+	linear->to(device);
 
 	register_module("conv1", conv1);
 	register_module("bn1", bn1);

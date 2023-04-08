@@ -8,7 +8,8 @@ struct InceptionImpl : public torch::nn::Module {
 
 	torch::nn::Sequential b1{nullptr}, b2{nullptr}, b3{nullptr}, b4{nullptr};
 
-	explicit InceptionImpl(int64_t in_planes, int64_t n1x1, int64_t n3x3red, int64_t n3x3, int64_t n5x5red, int64_t n5x5, int64_t pool_planes);
+	explicit InceptionImpl(int64_t in_planes, int64_t n1x1, int64_t n3x3red, int64_t n3x3,
+							int64_t n5x5red, int64_t n5x5, int64_t pool_planes, torch::Device device);
 
     torch::Tensor forward(torch::Tensor x);
 };
@@ -28,7 +29,7 @@ struct GoogleNetImpl : public torch::nn::Module {
 	torch::nn::MaxPool2d maxpool{nullptr};
 	torch::nn::Linear linear{nullptr};
 
-	explicit GoogleNetImpl(int64_t num_classes);
+	explicit GoogleNetImpl(int64_t num_classes, torch::Device device=torch::kCPU);
 
 	torch::Tensor forward(torch::Tensor x);
 };

@@ -2,7 +2,8 @@
 
 using Options = torch::nn::Conv2dOptions;
 
-ResNextBlockImpl::ResNextBlockImpl(int64_t in_planes, int64_t cardinality, int64_t bottleneck_width, int64_t stride) {
+ResNextBlockImpl::ResNextBlockImpl(int64_t in_planes, int64_t cardinality,
+									int64_t bottleneck_width, int64_t stride, torch::Device device) {
 	if( this->stride != stride ) this->stride = stride;
 	if( this->cardinality != cardinality ) this->cardinality = cardinality;
 	if( this->bottleneck_width != bottleneck_width ) this->bottleneck_width = bottleneck_width;
@@ -15,7 +16,12 @@ ResNextBlockImpl::ResNextBlockImpl(int64_t in_planes, int64_t cardinality, int64
 	this->bn2 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(group_width));
 	this->conv3 = torch::nn::Conv2d(Options(group_width, expansion*group_width, 1).bias(false));
 	this->bn3 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(expansion*group_width));
-
+	this->conv1->to(device);
+	this->bn1->to(device);
+	this->conv2->to(device);
+	this->bn2->to(device);
+	this->conv3->to(device);
+	this->bn3->to(device);
 
 	if( this->stride != 1 || in_planes != this->expansion*group_width ) {
 
@@ -23,6 +29,7 @@ ResNextBlockImpl::ResNextBlockImpl(int64_t in_planes, int64_t cardinality, int64
 				torch::nn::Conv2d(Options(in_planes, expansion*group_width, 1).stride(stride).bias(false)),
 				torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(expansion*group_width))
 		);
+		this->shortcut->to(device);
 	    this->useShortcut = true;
 	}
 }
@@ -41,7 +48,8 @@ torch::Tensor ResNextBlockImpl::forward(torch::Tensor x) {
   return out.relu_();
 }
 
-ResNextImpl::ResNextImpl(std::vector<int> num_blocks, int64_t cardinality, int64_t bottleneck_width, int64_t num_classes) {
+ResNextImpl::ResNextImpl(std::vector<int> num_blocks, int64_t cardinality,
+							int64_t bottleneck_width, int64_t num_classes, torch::Device device) {
 	this->num_blocks = num_blocks;
 	this->cardinality = cardinality;
 	this->bottleneck_width = bottleneck_width;
@@ -49,14 +57,17 @@ ResNextImpl::ResNextImpl(std::vector<int> num_blocks, int64_t cardinality, int64
 
 	this->conv1 =torch::nn::Conv2d(Options(3, 64, 1).bias(false));
 	this->bn1 = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(64));
-	this->layer1 = _make_layer(num_blocks[0], 1);
-	this->layer2 = _make_layer(num_blocks[1], 2);
-	this->layer3 = _make_layer(num_blocks[2], 2);
+	this->layer1 = _make_layer(num_blocks[0], 1, device);
+	this->layer2 = _make_layer(num_blocks[1], 2, device);
+	this->layer3 = _make_layer(num_blocks[2], 2, device);
 
 	linear = torch::nn::Linear(cardinality*bottleneck_width*8, num_classes);
+	conv1->to(device);
+	bn1->to(device);
+	linear->to(device);
 }
 
-std::vector<ResNextBlock> ResNextImpl::_make_layer(int64_t blocks, int64_t stride) {
+std::vector<ResNextBlock> ResNextImpl::_make_layer(int64_t blocks, int64_t stride, torch::Device device) {
 	std::vector<int64_t> strides;
 	strides.push_back(stride);
 
@@ -66,7 +77,7 @@ std::vector<ResNextBlock> ResNextImpl::_make_layer(int64_t blocks, int64_t strid
 	std::vector<ResNextBlock> layers;
 
 	for( int i = 0; i < strides.size(); i++ ) {
-		layers.push_back(ResNextBlock(this->in_planes, this->cardinality, this->bottleneck_width, strides[i]));
+		layers.push_back(ResNextBlock(this->in_planes, this->cardinality, this->bottleneck_width, strides[i], device));
 		this->in_planes = this->expansion * this->cardinality * this->bottleneck_width;
 	}
 	this->bottleneck_width *= 2;
@@ -98,24 +109,24 @@ torch::Tensor ResNextImpl::forward(torch::Tensor x) {
 }
 
 
-ResNext ResNeXt29_2x64d(int64_t num_classes) {
+ResNext ResNeXt29_2x64d(int64_t num_classes, torch::Device device) {
 	std::vector<int> blocks = {3, 3, 3};
-    return ResNext(blocks, 2, 64, num_classes);
+    return ResNext(blocks, 2, 64, num_classes, device);
 }
 
-ResNext ResNeXt29_4x64d(int64_t num_classes) {
+ResNext ResNeXt29_4x64d(int64_t num_classes, torch::Device device) {
 	std::vector<int> blocks = {3, 3, 3};
-    return ResNext(blocks, 4, 64, num_classes);
+    return ResNext(blocks, 4, 64, num_classes, device);
 }
 
-ResNext ResNeXt29_8x64d(int64_t num_classes){
+ResNext ResNeXt29_8x64d(int64_t num_classes, torch::Device device){
 	std::vector<int> blocks = {3, 3, 3};
-    return ResNext(blocks, 8, 64, num_classes);
+    return ResNext(blocks, 8, 64, num_classes, device);
 }
 
-ResNext ResNeXt29_32x4d(int64_t num_classes) {
+ResNext ResNeXt29_32x4d(int64_t num_classes, torch::Device device) {
 	std::vector<int> blocks = {3, 3, 3};
-    return ResNext(blocks, 32, 4, num_classes);
+    return ResNext(blocks, 32, 4, num_classes, device);
 }
 
 
