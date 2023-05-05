@@ -7,7 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(DOWNLOAD_DATASETS "Automatically download required datasets at build-time." OFF)
 option(CREATE_SCRIPTMODULES "Automatically create all required scriptmodule files at build-time (requires python3)." OFF)
 
-set(PYTORCH_VERSION "1.13.1")
+set(PYTORCH_VERSION "2.0.0")
 
 set(USE_CPU_ONLY NO)
 
@@ -70,7 +70,8 @@ message(STATUS "    libraries: ${TORCH_LIBRARIES}")
 message(STATUS "    include path: ${TORCH_INCLUDE_DIRS}") 
 
 # add opencv package to the project
-FIND_PACKAGE( OpenCV 4.5.4 REQUIRED )
+#FIND_PACKAGE( OpenCV 4.5.4 REQUIRED )
+FIND_PACKAGE( OpenCV 4.7.0 REQUIRED PATHS "/usr/local/")
 INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} ) 
 
 message(STATUS "OpenCV library status:")
@@ -123,7 +124,7 @@ target_sources(DenseNet_cifar10 PRIVATE  DenseNet/main.cpp
 target_link_libraries(DenseNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(DenseNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -140,7 +141,7 @@ target_sources(DPN_cifar10 PRIVATE  DPN/main.cpp
 target_link_libraries(DPN_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(DPN_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -157,7 +158,7 @@ target_sources(EfficientNet_cifar10 PRIVATE  EfficientNet/main.cpp
 target_link_libraries(EfficientNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(EfficientNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -174,7 +175,7 @@ target_sources(GoogleNet_cifar10 PRIVATE  GoogleNet/main.cpp
 target_link_libraries(GoogleNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(GoogleNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -191,7 +192,7 @@ target_sources(LeNet_cifar10 PRIVATE  LeNet/main.cpp
 target_link_libraries(LeNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(LeNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -208,7 +209,7 @@ target_sources(MobileNet_cifar10 PRIVATE  MobileNet/main.cpp
 target_link_libraries(MobileNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(MobileNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -227,7 +228,7 @@ target_sources(PnasNet_cifar10 PRIVATE  PnasNet/main.cpp
 target_link_libraries(PnasNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(PnasNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -245,7 +246,7 @@ target_sources(PreactResNet_cifar10 PRIVATE  PreactResNet/main.cpp
 target_link_libraries(PreactResNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(PreactResNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -262,7 +263,7 @@ target_sources(RegNet_cifar10 PRIVATE  RegNet/main.cpp
 target_link_libraries(RegNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(RegNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -279,7 +280,7 @@ target_sources(ResNet_cifar10 PRIVATE  ResNet/main.cpp
 target_link_libraries(ResNet_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(ResNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -296,7 +297,7 @@ target_sources(ResNext_cifar10 PRIVATE  ResNext/main.cpp
 target_link_libraries(ResNext_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(ResNext_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 
@@ -314,7 +315,7 @@ target_sources(VGG_cifar10 PRIVATE  VGG/main.cpp
 target_link_libraries(VGG_cifar10 ${TORCH_LIBRARIES})  
 
 set_target_properties(VGG_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 

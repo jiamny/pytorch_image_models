@@ -54,12 +54,14 @@ cmake-build-*/
 
 # Other
 .DS_Store
-.idea/
+.idea
 .clangd/
 .cproject
 .project
 *.iml
 .settings/
+*.cc
+*.cu
 
 
 # Notebooks
