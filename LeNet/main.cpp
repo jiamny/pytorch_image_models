@@ -17,15 +17,15 @@ int main() {
 
 	// Hyper parameters
 	const int64_t num_classes = 10;
-	const int64_t batch_size = 100;
-	const size_t num_epochs = 30;
+	const int64_t batch_size = 32;
+	const size_t num_epochs = 20;
 	const double learning_rate = 0.001;
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
 
 	bool saveBestModel{false};
 
-	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
+	const std::string CIFAR_data_path = "/media/hhj/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 
@@ -146,11 +146,13 @@ int main() {
 
 	    std::cout << "Testset - Loss: " << test_sample_mean_loss << ", Accuracy: " << test_accuracy << '\n';
 
-	    if( saveBestModel )
+	    if( saveBestModel ) {
 	    	if( test_accuracy > best_acc ) {
 	    		torch::save(model, PATH);
 	    		best_acc = test_accuracy;
 	    	}
+	    }
+
 	}
 
 	if( saveBestModel ) {
@@ -187,7 +189,7 @@ int main() {
  //       std::cout << labels << std::endl;
 
  //       if( c.dim() > 0 ) {
-            for (int i = 0; i < batch_size; ++i) {
+            for (int i = 0; i < images.sizes()[0]; ++i) {
             	auto label = labels[i].item<long>();
             	if( label == prediction[i].item<long>() )
             		class_correct[label] += 1;

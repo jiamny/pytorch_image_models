@@ -33,15 +33,15 @@ int main() {
 	// Hyper parameters
 	const int64_t image_size{32};
 	const int64_t num_classes = 10;
-	const int64_t batch_size = 100;
-	const size_t num_epochs = 30;
+	const int64_t batch_size = 32;
+	const size_t num_epochs = 20;
 	const double learning_rate = 0.001;
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
 
 	bool saveBestModel{false};
 
-	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
+	const std::string CIFAR_data_path = "/media/hhj/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 
@@ -74,7 +74,9 @@ int main() {
 	model->to(device);
 
 	// Optimizer
-	torch::optim::Adam optimizer(model->parameters(), torch::optim::AdamOptions(learning_rate));
+	//torch::optim::Adam optimizer(model->parameters(), torch::optim::AdamOptions(learning_rate));
+	torch::optim::Adam optimizer(model->parameters(), torch::optim::AdamOptions(1e-4).betas({0.5, 0.999}));
+	auto criterion = torch::nn::NLLLoss(torch::nn::NLLLossOptions().ignore_index(-100).reduction(torch::kMean));
 
 	// Set floating point output precision
 	std::cout << std::fixed << std::setprecision(4);
@@ -101,12 +103,13 @@ int main() {
 
 	        // Forward pass
 	        auto output = model->forward(data);
+	        auto out = torch::nn::functional::log_softmax(output, /*dim=*/1);
 
 	        // Calculate loss
-	        auto loss = torch::nn::functional::cross_entropy(output, target);
+	        auto loss = criterion(out, target);
 
 	        // Update running loss
-	        running_loss += loss.item<double>() * data.size(0);
+	        running_loss += loss.item<float>();
 
 	        // Calculate prediction
 	        auto prediction = output.argmax(1);
@@ -194,7 +197,7 @@ int main() {
         auto outputs = model->forward(images);
         auto prediction = outputs.argmax(1);
 
-        for (int i = 0; i < batch_size; ++i) {
+        for (int i = 0; i < images.sizes()[0]; ++i) {
             auto label = labels[i].item<int>();
             if( label == prediction[i].item<int>() )
             	class_correct[label] += 1;

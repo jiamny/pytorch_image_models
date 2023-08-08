@@ -58,12 +58,12 @@ int main() {
 	const int64_t image_size{32};
 	const int64_t num_classes = 10;
 	const int64_t batch_size = 100;
-	const size_t num_epochs = 10;
+	const size_t num_epochs = 20;
 	const double learning_rate = 0.001;
 	const size_t learning_rate_decay_frequency = 8;  // number of epochs after which to decay the learning rate
 	const double learning_rate_decay_factor = 1.0 / 3.0;
 
-	const std::string CIFAR_data_path = "/media/stree/localssd/DL_data/cifar/cifar10/";
+	const std::string CIFAR_data_path = "/media/hhj/localssd/DL_data/cifar/cifar10/";
     std::string classes[10] = {"plane", "car", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"};
 
@@ -205,7 +205,7 @@ int main() {
         auto outputs = model->forward(images);
         auto prediction = outputs.argmax(1);
 
-        for (int i = 0; i < batch_size; ++i) {
+        for (int i = 0; i < images.sizes()[0]; ++i) {
             auto label = labels[i].item<long>();
             if( label == prediction[i].item<long>() )
             	class_correct[label] += 1;
