@@ -7,7 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(DOWNLOAD_DATASETS "Automatically download required datasets at build-time." OFF)
 option(CREATE_SCRIPTMODULES "Automatically create all required scriptmodule files at build-time (requires python3)." OFF)
 
-set(PYTORCH_VERSION "2.0.1")
+set(PYTORCH_VERSION "2.1.0")
 
 set(USE_CPU_ONLY OFF)
 
@@ -63,7 +63,7 @@ else()
 	find_package(Torch ${PYTORCH_VERSION} EXACT QUIET PATHS "${LIBTORCH_PATH}") 
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 message(STATUS "Torch library status:")
 message(STATUS "    version: ${Torch_VERSION}")
@@ -72,7 +72,7 @@ message(STATUS "    include path: ${TORCH_INCLUDE_DIRS}")
 
 # add opencv package to the project
 #FIND_PACKAGE( OpenCV 4.5.4 REQUIRED )
-FIND_PACKAGE( OpenCV 4.7.0 REQUIRED PATHS "/usr/local/")
+FIND_PACKAGE( OpenCV 4.8.0 REQUIRED PATHS "/usr/local/")
 INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} ) 
 
 message(STATUS "OpenCV library status:")
@@ -108,7 +108,7 @@ target_sources(AlexNet_cifar10 PRIVATE  AlexNet/main.cpp
 target_link_libraries(AlexNet_cifar10 ${TORCH_LIBRARIES})
 
 set_target_properties(AlexNet_cifar10 PROPERTIES
-  CXX_STANDARD 14
+  CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
 )
 # -------------------------------------------------------------------
