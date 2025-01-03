@@ -5,7 +5,7 @@ Train torch image models on the CIFAR10 data.
 
 ## Prerequisites
 - cmake   3.18+
-- PyTorch 2.4.0
+- PyTorch 2.5.1
 - opencv  4.5.4/4.8.0
 - CUDA    11.8
 - cudnn   8.6
